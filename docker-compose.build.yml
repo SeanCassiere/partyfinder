@@ -1,0 +1,7 @@
+# Optional local build; the default deployment pulls the published Docker Hub image.
+# docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+services:
+  partyfinder:
+    build: .
+    image: partyfinder:local
+    pull_policy: build

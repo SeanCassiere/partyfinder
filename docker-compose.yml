@@ -1,7 +1,6 @@
 services:
   partyfinder:
-    build: .
-    image: partyfinder:local
+    image: seancassiere/partyfinder:${PARTYFINDER_VERSION:-1.0.0}
     restart: unless-stopped
     ports:
       - '${PORT:-3925}:3925'

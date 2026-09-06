@@ -18,34 +18,91 @@ Built with React, TypeScript, Vite, and [Nitro's Vite integration](https://nitro
 
 ## Deploy with Docker Compose
 
+Use the published [Docker Hub image](https://hub.docker.com/r/seancassiere/partyfinder). It supports **AMD64 and ARM64**; Docker selects the correct architecture automatically. You only need Docker Engine with the Compose plugin—no source checkout, Node.js, pnpm, database, or media mounts.
+
+Create a deployment directory:
+
 ```sh
-git clone git@github.com:SeanCassiere/partyfinder.git
+mkdir -p partyfinder
 cd partyfinder
-cp .env.example .env
+```
+
+Save this as **`docker-compose.yml`** (the repository includes the same file):
+
+```yaml
+services:
+  partyfinder:
+    image: seancassiere/partyfinder:${PARTYFINDER_VERSION:-1.0.0}
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3925}:3925'
+    environment:
+      COPYPARTY_URL: ${COPYPARTY_URL:?Set COPYPARTY_URL in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      COPYPARTY_AUTH_HEADER: ${COPYPARTY_AUTH_HEADER:-PW}
+      ALLOW_FOLDER_DELETE: ${ALLOW_FOLDER_DELETE:-false}
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+```
+
+Generate a session secret:
+
+```sh
 openssl rand -hex 32
 ```
 
-Edit `.env`: set `COPYPARTY_URL` to your existing instance, paste the generated value into `SESSION_SECRET`, and set `COOKIE_SECURE` for your deployment.
+Create **`.env`** alongside `docker-compose.yml`. Set your Copyparty URL, paste the generated secret, and choose the cookie setting for your deployment. If you already cloned the repository, copy `.env.example` to `.env` instead; do not overwrite an existing configured `.env`.
 
 ```dotenv
+PARTYFINDER_VERSION=1.0.0
 COPYPARTY_URL=https://copyparty.example.com/
-SESSION_SECRET=your-generated-random-secret
+SESSION_SECRET=replace-with-the-generated-64-character-secret
 COOKIE_SECURE=true
 PORT=3925
+COPYPARTY_AUTH_HEADER=PW
+ALLOW_FOLDER_DELETE=false
 ```
 
-Then start it:
+Use `COOKIE_SECURE=true` behind HTTPS (including NGINX Proxy Manager). For a direct HTTP test at `http://localhost:3925`, change it to `false` **before starting**. Keep the secret private and stable across restarts; replacing it signs everyone out.
+
+Validate, pull, and start:
 
 ```sh
-docker compose up -d --build
+docker compose config --quiet
+docker compose pull
+docker compose up -d
 docker compose ps
 ```
 
-Point your HTTPS reverse proxy at port **3925**, preserving the original `Host` header. Partyfinder is served at the root of its own hostname. For a direct local HTTP connection at `http://localhost:3925`, use `COOKIE_SECURE=false`; otherwise the browser will not send the login cookie over HTTP. `true` is appropriate for HTTPS, even when the proxy-to-container connection is HTTP.
+The service should become **healthy**. Open your configured HTTPS hostname, or `http://localhost:3925` for the HTTP test. Sign in with your Copyparty password or choose guest access if your server allows it. No Docker Hub login is needed to pull the public image; publishing credentials are only for maintainers.
 
-The container connects to Copyparty over HTTP(S); it needs no media volume mounts or database. `COPYPARTY_URL` must be reachable from inside the container. `localhost` inside Docker means that container, not your existing Copyparty container: use the Copyparty service name on a shared Docker network, a LAN address, or its public hostname.
+Point your HTTPS reverse proxy at port **3925**, preserving the original `Host` header. Partyfinder is served at the root of its own hostname. `COOKIE_SECURE=true` is appropriate for HTTPS even when the proxy-to-container connection is HTTP. See [NGINX Proxy Manager setup](#deploy-behind-nginx-proxy-manager) below.
 
-Production runs as the unprivileged `node` user with a read-only filesystem, and `/healthz` provides a container health check. The image contains Node and Nitro's `.output` bundle, not source code or build tools. The supplied Compose file builds the image locally; no registry login or prepublished image is required after cloning.
+The container connects to Copyparty over HTTP(S). Set `COPYPARTY_URL` to an address reachable from **both the container and your browser**, since “Open in Copyparty” links use it too. `localhost` inside Docker means that container, not your existing Copyparty container. Use a suitable LAN or public hostname, including any upstream proxy prefix.
+
+Production runs as the unprivileged `node` user with a read-only filesystem, and `/healthz` provides a container health check. The image contains Node and Nitro's `.output` bundle, not source code or build tools. Keep `.env` backed up; there is no Partyfinder data volume to migrate.
+
+### Updates and rollback
+
+The default is pinned to `1.0.0` for a predictable deployment. Change `PARTYFINDER_VERSION` in `.env` to a published version from [Docker Hub tags](https://hub.docker.com/r/seancassiere/partyfinder/tags), then run:
+
+```sh
+docker compose pull
+docker compose up -d
+docker compose ps
+```
+
+Alternatively, set `PARTYFINDER_VERSION=latest` and use the same commands to fetch the newest published release. `latest` does not update a running container automatically. To roll back, restore the previous version in `.env` and run these commands again, keeping the existing `SESSION_SECRET`.
+
+Use `docker compose logs --tail=100 partyfinder` for troubleshooting. `docker compose down` stops and removes the deployment's containers/network, but does not delete `.env` or any files on Copyparty.
+
+**Migrating from the old local-build setup:** the tracked `compose.yaml` has been replaced by `docker-compose.yml`. Existing `.env` files still work, defaulting to image version `1.0.0`. If you copied the old file into a standalone installation, keep only one default Compose file or explicitly use `docker compose -f docker-compose.yml …`; Docker prefers `compose.yaml` when both exist. Do not keep `build: .` or `image: partyfinder:local` in the published-image deployment. For intentional local builds, use the [development override](#build-the-docker-image-locally).
 
 ## Deploy behind NGINX Proxy Manager
 
@@ -59,12 +116,12 @@ Use a dedicated hostname such as `partyfinder.homelab.example.com`, not a `/part
 docker network create proxy
 ```
 
-Skip creation if that network already exists. Add this to Partyfinder's `compose.yaml` (merge into existing keys, do not create duplicate `services` sections):
+Skip creation if that network already exists. Add this to Partyfinder's `docker-compose.yml` (merge into existing keys, do not create duplicate `services` sections):
 
 ```yaml
 services:
   partyfinder:
-    # Keep the existing build/environment/security settings.
+    # Keep the existing image/environment/security settings.
     networks:
       - proxy
     # Remove the existing ports: block; NPM connects directly to port 3925.
@@ -111,6 +168,7 @@ Troubleshooting:
 | `SESSION_SECRET`        | Required in production; random value of at least 32 characters. Changing it invalidates sessions.                                               |
 | `COOKIE_SECURE`         | `true` for HTTPS; `false` for local HTTP. Compose defaults to `true`.                                                                           |
 | `PORT`                  | Published host port in Compose, default `3925`. Container listens on `3925`.                                                                    |
+| `PARTYFINDER_VERSION`   | Docker Hub image tag used by Compose, default `1.0.0`. Set to a published version or `latest`. Not an application environment variable.         |
 | `COPYPARTY_AUTH_HEADER` | Password header, default `PW`. Change only if your Copyparty instance renamed `--pw-hdr`.                                                       |
 | `ALLOW_FOLDER_DELETE`   | `false` by default. Set `true` to expose recursive folder deletion; read the safety notes below first.                                          |
 
@@ -145,6 +203,8 @@ Search URLs preserve the directory, phrase, and recursion choice. Opening a resu
 Use Node **22.14+ (22.x)** or **24.10+**; `.nvmrc`, Docker, and CI use Node 22. pnpm **11.25.0** is pinned in `packageManager`. The minimum Node version also covers semantic-release.
 
 ```sh
+git clone git@github.com:SeanCassiere/partyfinder.git
+cd partyfinder
 corepack enable
 pnpm install --frozen-lockfile
 cp .env.example .env
@@ -173,6 +233,16 @@ COPYPARTY_SOURCE="$PWD/work/copyparty" \
 COPYPARTY_PYTHON="$PWD/work/venv/bin/python" pnpm test
 ```
 
+### Build the Docker image locally
+
+For development from a source checkout, layer the explicit build override over the deployment file:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
+This builds and runs `partyfinder:local` with the same environment and security settings. The override is not loaded by normal `docker compose` commands. To return to the published image, run `docker compose pull` followed by `docker compose up -d` without the override.
+
 ### Compiler, linting, and formatting
 
 `react({ compiler: true })` enables [Vite's native React Compiler integration](https://github.com/vitejs/vite-plugin-react/releases/tag/plugin-react%406.1.0). The `oxc-transform-react` version is pinned to the plugin's compatible peer range. This integration is experimental; production and browser smoke tests should accompany compiler upgrades.
@@ -182,6 +252,8 @@ COPYPARTY_PYTHON="$PWD/work/venv/bin/python" pnpm test
 `pnpm format` runs Oxfmt; `pnpm format:check` checks without writing. `.oxfmtrc.json` enables [Tailwind class sorting](https://oxc.rs/docs/guide/usage/formatter/sorting.html#sort-tailwind-css-classes), including `clsx`, `cn`, and `cva` arguments. The existing UI still uses custom CSS; this setting does not add a Tailwind build or rewrite its styles. Prettier and the npm lockfile have been removed. Dependencies are installed from `pnpm-lock.yaml` with a one-day minimum package age and only the required esbuild install script permitted.
 
 ## Docker Hub publishing
+
+This section is for maintainers of the release pipeline. To run Partyfinder, use the [Docker Compose deployment](#deploy-with-docker-compose) above; GitHub secrets and semantic-release are not required on your homelab.
 
 The release workflow follows [Stasher's CI → semantic-release → Docker Hub pattern](https://github.com/SeanCassiere/stasher/blob/main/.github/workflows/release.yml). After **Check** succeeds for a push to `main`, it releases the exact tested commit to:
 
@@ -200,17 +272,6 @@ Images target `linux/amd64` and `linux/arm64`, use GitHub Actions build caching,
 Without Docker Hub secrets, the release workflow reports a warning and skips publishing **before** creating any release tag. A green Check run alone does not mean an image was published; inspect the `release` run and Docker Hub.
 
 Use Conventional Commits: `feat:` creates a minor release, `fix:` a patch, and `!` / `BREAKING CHANGE:` a major release. Like Stasher, `refactor:` and `build(deps):` create patch releases; docs/chore-only changes do not normally release. The first qualifying release is `1.0.0`. Git tags and GitHub release notes are the version authority; no npm package is published or generated version-bump commit pushed. If Docker publishing fails after a tag was created, rerun the failed release job on the same current-main commit to reuse that version.
-
-### Deploy a published image
-
-After the first successful publication, replace `build: .` and `image: partyfinder:local` in Compose with `image: seancassiere/partyfinder:latest` (or pin a version), keeping the environment, networks and security settings. Then run:
-
-```sh
-docker compose pull
-docker compose up -d
-```
-
-For a private Docker Hub repository, first authenticate the deployment host with `docker login`. The NGINX Proxy Manager setup above is unchanged.
 
 ## API and research notes
 
