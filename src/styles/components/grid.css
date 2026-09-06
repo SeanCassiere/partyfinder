@@ -1,0 +1,109 @@
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* Every card in a row is the height of the tallest, so a two-line name or a longer action row
+     never makes one card taller than its neighbours. */
+  grid-auto-rows: 1fr;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+/* role="row" wrappers group the cards for assistive tech without taking part in layout, so the
+   measured `grid-template-columns` track count stays the real column count. */
+.file-grid-row {
+  display: contents;
+}
+/*
+ * Three zones, top to bottom: icon + name, then a meta line that shares its baseline with the
+ * action icons pinned bottom-right. `margin-top: auto` on the meta line does the pinning, so
+ * folders (two actions) and files (four) still line up.
+ */
+.file-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  min-width: 0;
+  background: var(--bg);
+  transition: background-color var(--motion-fast) linear;
+  scroll-margin-block: var(--space-2);
+}
+.file-card:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.file-card:hover {
+  background: var(--surface);
+}
+.file-card[aria-selected='true'] {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+}
+.file-card .entry-identity {
+  display: block;
+}
+.file-card .entry-icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: var(--space-2);
+}
+.file-card .entry-icon svg {
+  width: 20px;
+  height: 20px;
+}
+/* Two lines, then an ellipsis. Clamping is done by the browser on the real text — no JS
+   truncation, so multi-byte names are never cut mid-character. */
+.file-card .entry-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+.file-card .entry-parent {
+  margin-top: var(--space-1);
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
+  min-height: var(--control-height);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}
+.card-kind {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/*
+ * Actions are revealed on hover or when focus is anywhere in the card — including the card itself,
+ * which is the roving tab stop, so they are already shown by the time Tab moves into them (the
+ * roving handler finds them either way; `visibility` does not affect the query). They keep their
+ * space in the layout, so nothing shifts. Touch devices, which have no hover, always get them.
+ */
+.file-card .entry-actions {
+  flex-shrink: 0;
+  margin-left: auto;
+  visibility: hidden;
+}
+.file-card:hover .entry-actions,
+.file-card:focus-within .entry-actions,
+.file-card[aria-selected='true'] .entry-actions {
+  visibility: visible;
+}
+@media (hover: none) {
+  .file-card .entry-actions {
+    visibility: visible;
+  }
+}
