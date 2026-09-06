@@ -23,6 +23,7 @@ import {
   List,
   LoaderCircle,
   LogOut,
+  MoreHorizontal,
   RefreshCw,
   Search,
   Server,
@@ -30,6 +31,8 @@ import {
   X,
 } from 'lucide-react';
 import { api, ApiError } from './api';
+import { ThemePicker } from './ThemePicker';
+import { EntryMenu, type MenuTarget } from './EntryMenu';
 import type { Entry, Listing, SearchResults } from '../shared/types';
 
 type Connection = { server: string; url: string };
@@ -124,6 +127,9 @@ function Login({
   }
   return (
     <main className="login-page">
+      <div className="login-theme">
+        <ThemePicker />
+      </div>
       <div className="login-brand">
         <Logo />
       </div>
@@ -210,6 +216,7 @@ export default function App() {
   const [view, setView] = useState<'list' | 'grid'>('list');
   const [visibleCount, setVisibleCount] = useState(250);
   const [toast, setToast] = useState('');
+  const [menu, setMenu] = useState<MenuTarget | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const searching = Boolean(route.q);
   const folderName = route.path === '/' ? 'All files' : route.path.split('/').at(-1)!;
@@ -305,6 +312,7 @@ export default function App() {
   }, [signedIn, route.path, route.q, route.recursive, route.limit, reload]);
 
   function navigate(next: Partial<typeof route>) {
+    setMenu(null);
     const value = { ...route, ...next };
     const params = new URLSearchParams();
     if (value.path !== '/') params.set('path', value.path);
@@ -327,6 +335,7 @@ export default function App() {
   }
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
+      if (menu) return;
       const editing = /^(INPUT|TEXTAREA|SELECT)$/.test((event.target as HTMLElement)?.tagName);
       if (event.key === '/' && !editing) {
         event.preventDefault();
@@ -384,6 +393,21 @@ export default function App() {
   }
   function download(entry: Entry) {
     return `/api/file?path=${encodeURIComponent(entry.path)}${entry.key ? '&key=' + encodeURIComponent(entry.key) : ''}`;
+  }
+  function contextProps(entry: Entry) {
+    return {
+      onContextMenu: (event: React.MouseEvent<HTMLElement>) => {
+        event.preventDefault();
+        setMenu({ entry, x: event.clientX, y: event.clientY });
+      },
+      onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => {
+        if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+          event.preventDefault();
+          const rect = event.currentTarget.getBoundingClientRect();
+          setMenu({ entry, x: rect.left + 24, y: rect.top + 24 });
+        }
+      },
+    };
   }
 
   if (startupError)
@@ -456,6 +480,18 @@ export default function App() {
   );
   const renderActions = (entry: Entry) => (
     <div className="entry-actions">
+      <button
+        className="icon-button"
+        aria-label={`Actions for ${entry.name}`}
+        title="More actions"
+        aria-haspopup="menu"
+        onClick={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          setMenu({ entry, x: rect.right - 260, y: rect.bottom });
+        }}
+      >
+        <MoreHorizontal size={17} />
+      </button>
       {entry.kind === 'directory' ? (
         <button
           className="icon-button"
@@ -623,9 +659,23 @@ export default function App() {
               </span>
             ))}
           </nav>
-          <a className="upstream-link" href={connection?.url} target="_blank" rel="noreferrer">
-            Open Copyparty <ExternalLink size={13} />
+          <a
+            className="upstream-link"
+            href={
+              connection
+                ? connection.url +
+                  route.path.split('/').filter(Boolean).map(encodeURIComponent).join('/') +
+                  (route.path === '/' ? '' : '/')
+                : undefined
+            }
+            target="_blank"
+            rel="noreferrer"
+            title="Open current folder in Copyparty"
+            aria-label="Open current folder in Copyparty"
+          >
+            Open in Copyparty <ExternalLink size={13} />
           </a>
+          <ThemePicker />
           <button
             className="icon-button mobile-disconnect"
             aria-label="Disconnect"
@@ -865,6 +915,7 @@ export default function App() {
                     {entries.slice(0, visibleCount).map((entry) => (
                       <tr
                         key={entry.path}
+                        {...contextProps(entry)}
                         onDoubleClick={() => {
                           if (entry.kind === 'directory') openFolder(entry.path);
                         }}
@@ -892,7 +943,7 @@ export default function App() {
             ) : (
               <div className="file-grid">
                 {entries.slice(0, visibleCount).map((entry) => (
-                  <article className="file-card" key={entry.path}>
+                  <article className="file-card" key={entry.path} {...contextProps(entry)}>
                     {renderName(entry)}
                     <div className="card-meta">
                       <span>{entry.kind === 'directory' ? 'Folder' : bytes(entry.size)}</span>
@@ -959,6 +1010,17 @@ export default function App() {
           <Check size={16} />
           {toast}
         </div>
+      )}
+      {menu && (
+        <EntryMenu
+          key={menu.entry.path}
+          target={menu}
+          onClose={() => setMenu(null)}
+          onChanged={(message) => {
+            setToast(message);
+            setReload((n) => n + 1);
+          }}
+        />
       )}
     </div>
   );

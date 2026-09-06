@@ -87,7 +87,7 @@ export class Copyparty {
         403: 'Copyparty denied access. Check your password and folder permissions.',
         404: 'This folder or file no longer exists, or is not accessible.',
         429: 'Copyparty is busy with another search. Wait a moment and try again.',
-        500: 'Copyparty could not complete the request. Search requires file indexing (e2dsa).',
+        500: 'Copyparty could not complete the request. Check its logs, permissions, and indexing configuration.',
       };
       throw new AppError(
         response.status >= 500 ? 502 : response.status,
@@ -150,6 +150,93 @@ export class Copyparty {
         ...data.files.map((e) => this.entry(e.href, url, 'file', e.sz, e.ts)),
       ],
     };
+  }
+
+  private async target(path: string, password: string) {
+    if (path === '/' || parentPath(path) === '/')
+      throw new AppError(403, 'Server roots and top-level locations cannot be changed here.');
+    const listing = await this.list(parentPath(path), password);
+    const entry = listing.entries.find((e) => e.path === path);
+    if (!entry)
+      throw new AppError(404, 'This item no longer exists or is not visible. Refresh the folder.');
+    return { listing, entry };
+  }
+
+  async actions(path: string, password: string, allowFolderDelete = false) {
+    if (path === '/' || parentPath(path) === '/')
+      return {
+        rename: false,
+        delete: false,
+        reason: 'Server roots and top-level locations are protected.',
+      };
+    const { listing, entry } = await this.target(path, password);
+    const perms =
+      entry.kind === 'directory'
+        ? (await this.list(path, password)).permissions
+        : listing.permissions;
+    const read = perms.includes('read');
+    return {
+      rename: read && perms.includes('move') && listing.permissions.includes('write'),
+      delete: read && perms.includes('delete') && (entry.kind === 'file' || allowFolderDelete),
+      reason:
+        entry.kind === 'directory' && !allowFolderDelete
+          ? 'Folder deletion is disabled by the app operator. Rename still follows Copyparty permissions.'
+          : 'Actions follow your Copyparty permissions.',
+    };
+  }
+
+  async rename(path: string, name: unknown, password: string) {
+    if (
+      typeof name !== 'string' ||
+      !name.trim() ||
+      name === '.' ||
+      name === '..' ||
+      /[/\\\x00-\x1f\x7f]/.test(name) ||
+      Buffer.byteLength(name) > 255
+    )
+      throw new AppError(
+        400,
+        'Use a name of 1–255 bytes without slashes, backslashes, or control characters.',
+      );
+    if (!(await this.actions(path, password)).rename)
+      throw new AppError(403, 'Rename requires read, move, and destination write permissions.');
+    const { listing } = await this.target(path, password);
+    if (listing.entries.some((e) => e.name.toLowerCase() === name.toLowerCase()))
+      throw new AppError(409, 'An item with this name already exists. Choose a different name.');
+    const destination = normalizePath(parentPath(path) + '/' + name);
+    const url = this.url(path);
+    url.searchParams.set('move', decodeURIComponent(this.url(destination).pathname));
+    const response = await this.fetch(url, password, { method: 'POST' });
+    await response.body?.cancel();
+    const after = await this.list(parentPath(path), password);
+    if (
+      after.entries.some((e) => e.path === path) ||
+      !after.entries.some((e) => e.path === destination)
+    )
+      throw new AppError(
+        409,
+        'The rename could not be fully verified. Refresh the folder before retrying; it may have partially completed.',
+      );
+    return { ok: true, path: destination };
+  }
+
+  async delete(path: string, password: string, allowFolderDelete = false) {
+    if (!(await this.actions(path, password, allowFolderDelete)).delete)
+      throw new AppError(
+        403,
+        'Delete is unavailable for this item. Check permissions and the folder-deletion setting.',
+      );
+    const url = this.url(path);
+    url.searchParams.set('delete', '');
+    const response = await this.fetch(url, password, { method: 'POST' });
+    await response.body?.cancel();
+    const after = await this.list(parentPath(path), password);
+    if (after.entries.some((e) => e.path === path))
+      throw new AppError(
+        409,
+        'The item still exists. Copyparty may have blocked or partially completed deletion. Refresh before retrying.',
+      );
+    return { ok: true };
   }
 
   async search(

@@ -14,6 +14,7 @@ export function getApp() {
     secret: secret || randomBytes(32).toString('hex'),
     secureCookie: process.env.COOKIE_SECURE === 'true',
     authHeader: process.env.COPYPARTY_AUTH_HEADER || 'PW',
+    allowFolderDelete: process.env.ALLOW_FOLDER_DELETE === 'true',
   });
   return app;
 }

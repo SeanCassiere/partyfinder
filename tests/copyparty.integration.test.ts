@@ -50,7 +50,7 @@ test(
         '-p',
         String(port),
         '-v',
-        `${join(fixture, 'media')}:/media:r`,
+        `${join(fixture, 'media')}:/media:r:rwmd,tester`,
         '-a',
         'tester:fixture-password',
         '-e2dsa',
@@ -128,6 +128,35 @@ test(
         specialPath.entries.map((e) => e.path),
         ['/media/wild_%/xyz.txt'],
       );
+      const file = '/media/movies/hash # and ?.txt';
+      assert.equal((await client.actions(file, '')).rename, false);
+      assert.equal((await client.actions(file, '')).delete, false);
+      await assert.rejects(client.rename(file, 'nope.txt', ''), /permissions/);
+      await assert.rejects(client.delete(file, ''), /unavailable/);
+      assert.equal((await client.actions(file, 'fixture-password')).rename, true);
+      await assert.rejects(client.rename(file, 'xyz.txt', 'fixture-password'), /already exists/);
+      await assert.rejects(client.rename(file, '../escape', 'fixture-password'), /name/);
+      const renamed = await client.rename(file, 'new # % ü ?.txt', 'fixture-password');
+      assert.equal(renamed.path, '/media/movies/new # % ü ?.txt');
+      await client.delete(renamed.path, 'fixture-password');
+      assert.ok(
+        !(await client.list('/media/movies', 'fixture-password')).entries.some(
+          (e) => e.path === renamed.path,
+        ),
+      );
+      const folder = '/media/movies/xyz folder';
+      assert.equal((await client.actions(folder, 'fixture-password')).delete, false);
+      await assert.rejects(client.delete(folder, 'fixture-password'), /unavailable/);
+      await assert.rejects(client.rename(folder, 'action', 'fixture-password'), /already exists/);
+      const movedFolder = await client.rename(folder, 'renamed folder', 'fixture-password');
+      assert.ok(
+        (await client.list(movedFolder.path, 'fixture-password')).entries.some(
+          (e) => e.name === 'note.txt',
+        ),
+      );
+      await client.delete(movedFolder.path, 'fixture-password', true);
+      assert.equal((await client.actions('/media', 'fixture-password', true)).delete, false);
+      await assert.rejects(client.delete('/media', 'fixture-password', true), /unavailable/);
     } finally {
       child.kill('SIGTERM');
       await new Promise<void>((resolve) => {

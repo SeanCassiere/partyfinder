@@ -7,6 +7,7 @@ export interface Config {
   secret: string;
   secureCookie: boolean;
   authHeader?: string;
+  allowFolderDelete?: boolean;
 }
 
 async function readJson(request: Request): Promise<unknown> {
@@ -105,6 +106,27 @@ export function createApp(config: Config, upstreamFetch?: typeof fetch) {
       if (route === 'POST /api/search') {
         const { path, q, recursive, limit } = parseSearch(await readJson(req));
         return json(await copyparty.search(path, q, recursive, limit, password));
+      }
+      if (route === 'GET /api/actions')
+        return json(
+          await copyparty.actions(
+            normalizePath(url.searchParams.get('path')),
+            password,
+            config.allowFolderDelete,
+          ),
+        );
+      if (route === 'POST /api/rename' || route === 'POST /api/delete') {
+        const body = (await readJson(req)) as {
+          path?: unknown;
+          name?: unknown;
+          confirmation?: unknown;
+        } | null;
+        const path = normalizePath(body?.path);
+        if (route === 'POST /api/rename')
+          return json(await copyparty.rename(path, body?.name, password));
+        if (body?.confirmation !== path.split('/').at(-1))
+          throw new AppError(400, 'Confirm deletion with the exact item name.');
+        return json(await copyparty.delete(path, password, config.allowFolderDelete));
       }
       if (route === 'GET /api/file') {
         const path = normalizePath(url.searchParams.get('path'));

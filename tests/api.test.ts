@@ -9,6 +9,89 @@ const secret = 'test-only-secret-at-least-32-characters';
 const base = 'http://copyparty.test/';
 const root = { dirs: [{ href: 'media/', sz: 0, ts: 0 }], files: [], acct: '*', perms: [] };
 
+test('mutation endpoints require session, same-origin, confirmation and actual item permissions', async () => {
+  let mutations = 0;
+  const app = createApp({ upstream: base, secret, secureCookie: false }, async (_url, init) => {
+    if (init?.method === 'POST') mutations++;
+    return Response.json({ dirs: [], files: [{ href: 'test.txt' }], perms: ['read'], acct: '*' });
+  });
+  const cookie = `partyfinder_session=${new Sessions(secret).seal('')}`;
+  const request = (
+    action: string,
+    body: unknown,
+    headers: Record<string, string> = { Cookie: cookie },
+  ) =>
+    app(
+      new Request(`http://app.test/api/${action}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      }),
+    );
+  assert.equal(
+    (await request('delete', { path: '/media/test.txt', confirmation: 'test.txt' }, {})).status,
+    401,
+  );
+  assert.equal(
+    (
+      await request(
+        'delete',
+        { path: '/media/test.txt', confirmation: 'test.txt' },
+        { Cookie: cookie, Origin: 'https://evil.test' },
+      )
+    ).status,
+    403,
+  );
+  assert.equal((await request('delete', { path: '/media/test.txt' })).status, 400);
+  assert.equal(
+    (await request('delete', { path: '/media/test.txt', confirmation: 'test.txt' })).status,
+    403,
+  );
+  assert.equal(
+    (await request('rename', { path: '/media/test.txt', name: 'next.txt' })).status,
+    403,
+  );
+  assert.equal((await request('rename', { path: '/media/test.txt', name: '../bad' })).status, 400);
+  assert.equal((await request('rename', null)).status, 400);
+  assert.equal(mutations, 0);
+});
+
+test('rename encodes special characters and a proxy prefix exactly once, rejects collisions', async () => {
+  let renamed = false;
+  const client = new Copyparty(
+    'http://copyparty.test/party%20files/',
+    'PW',
+    async (input, init) => {
+      const url = new URL(String(input));
+      if (init?.method === 'POST') {
+        assert.equal(url.pathname, '/party%20files/media/a%20%23%25.txt');
+        assert.equal(url.searchParams.get('move'), '/party files/media/new ?% ü.txt');
+        assert.equal(new Headers(init.headers).has('content-type'), false);
+        assert.equal(init.body, undefined);
+        renamed = true;
+        return new Response('k\r\n', { status: 201 });
+      }
+      return Response.json({
+        dirs: [{ href: 'existing/' }],
+        files: [{ href: renamed ? 'new%20%3F%25%20%C3%BC.txt' : 'a%20%23%25.txt' }],
+        perms: ['read', 'move', 'write', 'delete'],
+      });
+    },
+  );
+  await assert.rejects(client.rename('/media/a #%.txt', 'existing', 'pw'), /already exists/);
+  assert.equal(renamed, false);
+  const result = await client.rename('/media/a #%.txt', 'new ?% ü.txt', 'pw');
+  assert.equal(result.path, '/media/new ?% ü.txt');
+});
+
+test('delete rejects a misleading success when the target remains', async () => {
+  const client = new Copyparty(base, 'PW', async (_input, init) => {
+    if (init?.method === 'POST') return new Response('deleted 0 files');
+    return Response.json({ dirs: [], files: [{ href: 'kept.txt' }], perms: ['read', 'delete'] });
+  });
+  await assert.rejects(client.delete('/media/kept.txt', 'pw'), /still exists/);
+});
+
 test('strict folder boundaries, direct children, root, and literal phrases', () => {
   assert.equal(isInScope({ parent: '/media/movies' }, '/media/movies', false), true);
   assert.equal(isInScope({ parent: '/media/movies/action' }, '/media/movies', false), false);
