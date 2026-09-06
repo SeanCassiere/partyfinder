@@ -1,0 +1,164 @@
+@media (max-width: 1100px) {
+  .sidebar {
+    width: 200px;
+  }
+  .main-shell {
+    margin-left: 200px;
+  }
+  .topbar {
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+  }
+  .main-content {
+    padding: var(--space-3);
+  }
+  .type-column {
+    display: none;
+  }
+  .date-column {
+    width: 23%;
+  }
+  .size-column {
+    width: 16%;
+  }
+  .actions-column {
+    width: 78px;
+  }
+  td,
+  th {
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+  }
+}
+
+/* The sidebar collapses into a horizontal volume strip below 768px. */
+
+@media (max-width: 768px) {
+  .app-shell {
+    display: block;
+  }
+  .sidebar {
+    width: 100%;
+    position: static;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand {
+    padding: 0;
+  }
+  .recent-nav,
+  .sidebar-bottom {
+    display: none;
+  }
+  .sidebar-nav {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+    overflow-x: auto;
+  }
+  .sidebar-nav ul {
+    display: flex;
+    gap: var(--space-1);
+  }
+  .nav-label {
+    display: none;
+  }
+  .nav-item {
+    width: auto;
+    padding: 0 var(--space-2);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+  .main-shell {
+    margin-left: 0;
+  }
+  .topbar {
+    padding: var(--space-1) var(--space-2);
+  }
+  .navigation-buttons {
+    gap: 0;
+    padding-right: var(--space-1);
+  }
+  .breadcrumbs {
+    flex-basis: 100%;
+    order: -1;
+  }
+  .breadcrumbs button {
+    max-width: 16ch;
+    font-size: var(--text-sm);
+  }
+  .search-form {
+    flex-basis: 100%;
+  }
+  .search-field kbd {
+    display: none;
+  }
+  .main-content {
+    padding: var(--space-3) var(--space-2) var(--space-2);
+  }
+  /*
+   * Below 768px the table keeps Name and Size only — Type went at 1100px, Modified goes here.
+   * Size and the actions column take fixed widths wide enough for their non-wrapping content, so
+   * Name absorbs the rest and the table never needs to scroll sideways.
+   */
+  .date-column {
+    display: none;
+  }
+  .size-column {
+    width: 92px;
+  }
+  .actions-column {
+    width: 72px;
+  }
+  /* The name link already opens the file in Copyparty; drop the duplicate control. */
+  .entry-actions .open-external {
+    display: none;
+  }
+  .entry-identity {
+    gap: var(--space-2);
+  }
+  td:first-child,
+  th:first-child {
+    padding-left: var(--space-2);
+  }
+  .content-footer span:last-child {
+    display: none;
+  }
+  .more-results {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .empty-state {
+    padding: var(--space-6) var(--space-4);
+  }
+  .file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--space-2);
+    padding: var(--space-2);
+  }
+  .login-brand {
+    margin-left: 0;
+  }
+  .login-page {
+    padding: var(--space-4);
+  }
+  .login-theme {
+    top: var(--space-4);
+    right: var(--space-4);
+  }
+}
+
+@media (max-width: 520px) {
+  .scope-toggle span {
+    font-size: var(--text-xs);
+  }
+  .control-select {
+    max-width: 92px;
+  }
+  .search-submit {
+    min-width: 0;
+    padding: 0 var(--space-2);
+  }
+}

@@ -1,0 +1,38 @@
+/* Filter, sort and view controls — the right-hand half of the toolbar row. */
+
+.view-controls {
+  gap: var(--space-1);
+}
+.control-select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  min-height: var(--control-height);
+  padding: 0 var(--space-1);
+  max-width: 120px;
+}
+.view-toggle {
+  display: flex;
+  gap: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1px;
+}
+.view-toggle button {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  min-height: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: background-color var(--motion-fast) linear;
+}
+.view-toggle button:hover {
+  background: var(--surface);
+}
+.view-toggle button.selected {
+  color: var(--text);
+  background: var(--accent-subtle);
+}
