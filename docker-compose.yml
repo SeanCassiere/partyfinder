@@ -5,8 +5,8 @@ services:
     ports:
       - '${PORT:-3925}:3925'
     environment:
-      COPYPARTY_URL: ${COPYPARTY_URL:?Set COPYPARTY_URL in .env}
-      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      COPYPARTY_URL: ${COPYPARTY_URL:?Set COPYPARTY_URL in stack environment or .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in stack environment or .env}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       COPYPARTY_AUTH_HEADER: ${COPYPARTY_AUTH_HEADER:-PW}
       ALLOW_FOLDER_DELETE: ${ALLOW_FOLDER_DELETE:-false}
