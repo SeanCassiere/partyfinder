@@ -1,0 +1,11 @@
+/* The content status bar: one short line, counts on the left. */
+.content-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 26px;
+  padding: var(--space-2) var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}

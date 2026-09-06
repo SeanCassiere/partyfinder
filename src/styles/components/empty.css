@@ -1,0 +1,68 @@
+/* Empty, loading and error states: a sentence and, where useful, real actions. */
+.empty-state {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: var(--space-8) var(--space-6);
+  gap: var(--space-4);
+  font-size: var(--text-base);
+  color: var(--text-muted);
+}
+.empty-state p {
+  font-size: var(--text-base);
+  color: var(--text-muted);
+  max-width: 430px;
+  overflow-wrap: anywhere;
+}
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.empty-actions:empty {
+  display: none;
+}
+.secondary {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+  color: var(--text-muted);
+  background: var(--bg);
+  transition: background-color var(--motion-fast) linear;
+}
+.secondary:hover {
+  background: var(--surface);
+}
+.more-results {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.limit-notice {
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  background: var(--warning-subtle);
+  color: var(--warning);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-3);
+}
+.load-more {
+  padding: var(--space-3);
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
