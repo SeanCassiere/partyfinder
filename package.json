@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 3925",
+    "dev:mock": "node scripts/mock-upstream.mjs",
     "build": "tsc --noEmit && vite build",
     "start": "node .output/server/index.mjs",
     "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
