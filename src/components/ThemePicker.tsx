@@ -16,10 +16,25 @@ export function ThemePicker() {
     const media = matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
       const resolved = theme === 'system' ? (media.matches ? 'dark' : 'light') : theme;
-      document.documentElement.dataset.theme = resolved;
+      const root = document.documentElement;
+      // A theme flip only rewrites custom properties, so any element carrying a
+      // colour transition would animate away from the *old* theme's value and
+      // sit on the wrong colour for the duration. Suppress transitions across
+      // the swap (see the [data-theme-switching] rule in reset.css), then force
+      // one synchronous style/layout flush so the new colours are computed while
+      // transitions are still off. The flush is what makes this correct without
+      // a rAF — a background tab never gets frames, and the suppression must not
+      // outlive the swap.
+      const switching = root.dataset.theme !== resolved;
+      if (switching) root.dataset.themeSwitching = '';
+      root.dataset.theme = resolved;
+      if (switching) {
+        root.getBoundingClientRect();
+        delete root.dataset.themeSwitching;
+      }
       document
         .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', resolved === 'dark' ? '#111827' : '#f7f9fc');
+        ?.setAttribute('content', resolved === 'dark' ? '#16191d' : '#ffffff');
     };
     apply();
     media.addEventListener('change', apply);
@@ -32,10 +47,14 @@ export function ThemePicker() {
   }, [theme]);
   const Icon = theme === 'system' ? Monitor : theme === 'dark' ? Moon : Sun;
   return (
-    <label className="theme-picker">
-      <Icon size={15} />
+    <span className="theme-picker">
+      <Icon size={15} aria-hidden="true" />
+      <label className="sr-only" htmlFor="theme-select">
+        Colour theme
+      </label>
       <select
-        aria-label="Color theme"
+        id="theme-select"
+        className="control-select"
         value={theme}
         onChange={(e) => setTheme(e.target.value as Theme)}
       >
@@ -43,6 +62,6 @@ export function ThemePicker() {
         <option value="light">Light</option>
         <option value="dark">Dark</option>
       </select>
-    </label>
+    </span>
   );
 }
