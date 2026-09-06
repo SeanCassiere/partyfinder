@@ -4,6 +4,8 @@ A familiar file explorer for [Copyparty](https://github.com/9001/copyparty). Bro
 
 Includes list/grid views, System/Light/Dark themes, right-click rename/delete, downloads, and “Open in Copyparty.” Recursive search uses Copyparty's file index; current-folder search also matches folders. [Usage and limitations →](docs/usage.md)
 
+![Partyfinder in list view: a left sidebar listing volumes and recent folders, a single toolbar across the top with back/forward/up controls, a media › Movies breadcrumb, a search box with a subfolders toggle, type and sort filters, and list/grid and appearance switches, above a file table of folders and files with name, type, size, modified date, and per-row actions.](media/list-view.png)
+
 ## Deploy with Portainer
 
 Use the public [Docker Hub image](https://hub.docker.com/r/seancassiere/partyfinder) on AMD64 or ARM64. No source checkout, database, media mounts, or Docker Hub login required. These instructions target **Docker Standalone**, not Swarm.
