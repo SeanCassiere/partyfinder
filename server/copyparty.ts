@@ -2,6 +2,7 @@ import {
   AppError,
   buildQuery,
   encodePath,
+  hasControlCharacters,
   isInScope,
   literalMatch,
   normalizePath,
@@ -191,7 +192,8 @@ export class Copyparty {
       !name.trim() ||
       name === '.' ||
       name === '..' ||
-      /[/\\\x00-\x1f\x7f]/.test(name) ||
+      /[/\\]/.test(name) ||
+      hasControlCharacters(name) ||
       Buffer.byteLength(name) > 255
     )
       throw new AppError(

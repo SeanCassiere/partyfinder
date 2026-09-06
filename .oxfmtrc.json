@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "singleQuote": true,
+  "printWidth": 100,
+  "trailingComma": "all",
+  "sortTailwindcss": { "functions": ["clsx", "cn", "cva"] },
+  "ignorePatterns": [
+    "node_modules/**",
+    ".output/**",
+    ".nitro/**",
+    ".vite/**",
+    "dist/**",
+    "work/**",
+    "coverage/**",
+    "pnpm-lock.yaml",
+    ".env",
+    ".env.*"
+  ]
+}

@@ -66,9 +66,8 @@ export function EntryMenu({
       onClose();
     } catch (e) {
       setError((e as Error).message);
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   }
   return (
     <>

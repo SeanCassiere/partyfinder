@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "react"],
+  "categories": { "correctness": "error" },
+  "rules": { "react/unsupported-syntax": "error" },
+  "env": { "browser": true, "node": true },
+  "ignorePatterns": [
+    "node_modules/**",
+    ".output/**",
+    ".nitro/**",
+    ".vite/**",
+    "dist/**",
+    "work/**",
+    "coverage/**"
+  ]
+}

@@ -11,13 +11,18 @@ export class AppError extends Error {
 
 /** Application paths are decoded, rooted, and do not end in a slash. */
 export function normalizePath(value: unknown): string {
-  if (typeof value !== 'string' || value.length > 8192 || /[\u0000-\u001f\u007f]/u.test(value)) {
+  if (typeof value !== 'string' || value.length > 8192 || hasControlCharacters(value)) {
     throw new AppError(400, 'Invalid folder path.');
   }
   const parts = value.split('/').filter(Boolean);
   if (parts.some((part) => part === '.' || part === '..'))
     throw new AppError(400, 'Relative path segments are not supported.');
   return '/' + parts.join('/');
+}
+
+export function hasControlCharacters(value: string): boolean {
+  // oxlint-disable-next-line no-control-regex -- Reject unsafe controls in user-provided paths, names and queries.
+  return /[\u0000-\u001f\u007f]/u.test(value);
 }
 
 export function parentPath(path: string): string {
@@ -70,7 +75,7 @@ export function parseSearch(body: unknown) {
   if (!value || typeof value.q !== 'string' || !value.q.trim() || value.q.length > 300) {
     throw new AppError(400, 'Enter a search phrase between 1 and 300 characters.');
   }
-  if (/[\u0000-\u001f\u007f]/u.test(value.q))
+  if (hasControlCharacters(value.q))
     throw new AppError(400, 'Search phrases cannot contain control characters.');
   if (typeof value.recursive !== 'boolean') throw new AppError(400, 'Choose a search scope.');
   const limit = value.limit === undefined ? 250 : Number(value.limit);

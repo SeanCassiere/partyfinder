@@ -2,7 +2,7 @@
 
 A familiar file explorer for a Copyparty server. Browse to a folder, enter a filename phrase, and choose whether to include subfolders. The folder you're viewing is always the search scope.
 
-Built with React, TypeScript, Vite, and [Nitro's Vite integration](https://nitro.build/docs/vite). One dev server, one production build, one Docker container. Nitro's Vite integration currently uses Nitro 3 beta; its version is pinned in `package.json` and the lockfile.
+Built with React, TypeScript, Vite, and [Nitro's Vite integration](https://nitro.build/docs/vite). One dev server, one production build, one Docker container. Nitro's Vite integration currently uses Nitro 3 beta; its version is pinned in `package.json` and the pnpm lockfile. React Compiler is enabled through Vite's experimental native Oxc integration.
 
 ## What it does
 
@@ -142,20 +142,23 @@ Search URLs preserve the directory, phrase, and recursion choice. Opening a resu
 
 ## Development
 
-Node **22.12+** is required; Node 22 LTS is used in Docker and CI.
+Use Node **22.14+ (22.x)** or **24.10+**; `.nvmrc`, Docker, and CI use Node 22. pnpm **11.25.0** is pinned in `packageManager`. The minimum Node version also covers semantic-release.
 
 ```sh
-npm ci
+corepack enable
+pnpm install --frozen-lockfile
 cp .env.example .env
 # Set COPYPARTY_URL; use COOKIE_SECURE=false for local HTTP.
-npm run dev
+pnpm dev
 ```
 
 Open `http://127.0.0.1:3925`. Nitro serves the API and Vite serves the React app with hot reload. A missing development session secret generates an ephemeral one; sessions then expire when the server restarts.
 
 ```sh
-npm test
-npm run build
+pnpm lint
+pnpm format:check
+pnpm test
+pnpm build
 # Production reads process environment; unlike dev, it does not load .env itself:
 node --env-file=.env .output/server/index.mjs
 ```
@@ -167,8 +170,47 @@ git clone --depth 1 https://github.com/9001/copyparty.git work/copyparty
 python3 -m venv work/venv
 work/venv/bin/pip install jinja2
 COPYPARTY_SOURCE="$PWD/work/copyparty" \
-COPYPARTY_PYTHON="$PWD/work/venv/bin/python" npm test
+COPYPARTY_PYTHON="$PWD/work/venv/bin/python" pnpm test
 ```
+
+### Compiler, linting, and formatting
+
+`react({ compiler: true })` enables [Vite's native React Compiler integration](https://github.com/vitejs/vite-plugin-react/releases/tag/plugin-react%406.1.0). The `oxc-transform-react` version is pinned to the plugin's compatible peer range. This integration is experimental; production and browser smoke tests should accompany compiler upgrades.
+
+[Oxlint's React correctness rules](https://oxc.rs/blog/2026-08-18-react-compiler-support) are enabled, including the compiler validations, with unsupported syntax explicitly treated as an error. `pnpm lint` fails on warnings too; `pnpm lint:fix` applies safe fixes. Generated output, dependencies, and disposable fixtures are excluded. The only targeted rule exception permits the intentional security-validation regex that rejects control characters.
+
+`pnpm format` runs Oxfmt; `pnpm format:check` checks without writing. `.oxfmtrc.json` enables [Tailwind class sorting](https://oxc.rs/docs/guide/usage/formatter/sorting.html#sort-tailwind-css-classes), including `clsx`, `cn`, and `cva` arguments. The existing UI still uses custom CSS; this setting does not add a Tailwind build or rewrite its styles. Prettier and the npm lockfile have been removed. Dependencies are installed from `pnpm-lock.yaml` with a one-day minimum package age and only the required esbuild install script permitted.
+
+## Docker Hub publishing
+
+The release workflow follows [Stasher's CI → semantic-release → Docker Hub pattern](https://github.com/SeanCassiere/stasher/blob/main/.github/workflows/release.yml). After **Check** succeeds for a push to `main`, it releases the exact tested commit to:
+
+- `seancassiere/partyfinder:<version>` (for example `1.0.0`)
+- `seancassiere/partyfinder:latest`
+
+Images target `linux/amd64` and `linux/arm64`, use GitHub Actions build caching, and include OCI version/source/revision labels. Pull requests cannot run the secret-bearing publishing job. Superseded commits are skipped so an older build cannot overwrite `latest` after a newer release.
+
+### One-time setup
+
+1. Create the `seancassiere/partyfinder` repository on Docker Hub and choose its visibility deliberately. Published images contain the server/client bundle, not `.env` or credentials.
+2. In this GitHub repository, open **Settings → Secrets and variables → Actions**. Add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`, using a Docker Hub access token with permission to push this image. Do not paste credentials into source files or chat. The username can differ from the namespace if it has the necessary permissions.
+3. Ensure the workflow can create GitHub release tags/releases. It uses GitHub's automatic `GITHUB_TOKEN`, not a personal token; branch/tag protection rules must allow the intended release operation.
+4. Merge a releasable commit, or run **Actions → Check → Run workflow** on `main` after adding the secrets. A successful manual Check run also triggers publishing.
+
+Without Docker Hub secrets, the release workflow reports a warning and skips publishing **before** creating any release tag. A green Check run alone does not mean an image was published; inspect the `release` run and Docker Hub.
+
+Use Conventional Commits: `feat:` creates a minor release, `fix:` a patch, and `!` / `BREAKING CHANGE:` a major release. Like Stasher, `refactor:` and `build(deps):` create patch releases; docs/chore-only changes do not normally release. The first qualifying release is `1.0.0`. Git tags and GitHub release notes are the version authority; no npm package is published or generated version-bump commit pushed. If Docker publishing fails after a tag was created, rerun the failed release job on the same current-main commit to reuse that version.
+
+### Deploy a published image
+
+After the first successful publication, replace `build: .` and `image: partyfinder:local` in Compose with `image: seancassiere/partyfinder:latest` (or pin a version), keeping the environment, networks and security settings. Then run:
+
+```sh
+docker compose pull
+docker compose up -d
+```
+
+For a private Docker Hub repository, first authenticate the deployment host with `docker login`. The NGINX Proxy Manager setup above is unchanged.
 
 ## API and research notes
 

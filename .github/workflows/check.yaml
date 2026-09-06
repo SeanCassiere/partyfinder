@@ -2,27 +2,36 @@ name: Check
 on:
   push:
   pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6.0.8
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - uses: actions/setup-python@v5
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           repository: 9001/copyparty
           ref: 4e318d516531e6a9c683b21e58b9cb48131eb175
           path: work/copyparty
       - run: pip install jinja2
-      - run: npm test
+      - run: pnpm test
         env:
           COPYPARTY_SOURCE: ${{ github.workspace }}/work/copyparty
-      - run: npm run build
+      - run: pnpm build
       - run: docker build -t partyfinder:test .

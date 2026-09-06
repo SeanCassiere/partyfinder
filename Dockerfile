@@ -1,12 +1,18 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3925
+ARG APP_VERSION=dev
+ARG COMMIT_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/SeanCassiere/partyfinder" \
+      org.opencontainers.image.version=$APP_VERSION \
+      org.opencontainers.image.revision=$COMMIT_SHA
 WORKDIR /app
 COPY --from=build --chown=node:node /app/.output ./.output
 USER node

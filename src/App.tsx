@@ -39,6 +39,26 @@ type Connection = { server: string; url: string };
 type Place = { path: string; name: string };
 type Sort = 'name' | 'size' | 'modified';
 
+function readRecent(): Place[] {
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem('partyfinder.recent') || '[]');
+    if (Array.isArray(stored))
+      return stored
+        .filter((x): x is Place => x && typeof x.path === 'string' && typeof x.name === 'string')
+        .slice(0, 5);
+  } catch {
+    /* local preferences are optional */
+  }
+  return [];
+}
+function readView(): 'list' | 'grid' {
+  try {
+    return localStorage.getItem('partyfinder.view') === 'grid' ? 'grid' : 'list';
+  } catch {
+    return 'list';
+  }
+}
+
 function readLocation() {
   const params = new URLSearchParams(location.search);
   return {
@@ -121,9 +141,8 @@ function Login({
       onConnect();
     } catch (error) {
       setError((error as Error).message);
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   }
   return (
     <main className="login-page">
@@ -202,19 +221,30 @@ export default function App() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [route, setRoute] = useState(readLocation);
   const [draft, setDraft] = useState(route.q);
-  const [listing, setListing] = useState<Listing | null>(null);
-  const [results, setResults] = useState<SearchResults | null>(null);
+  const [response, setResponse] = useState<{
+    key: string;
+    data?: Listing | SearchResults;
+    error?: string;
+  } | null>(null);
   const [volumes, setVolumes] = useState<Entry[]>([]);
-  const [recent, setRecent] = useState<Place[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [recent, setRecent] = useState<Place[]>(readRecent);
   const [startupError, setStartupError] = useState('');
   const [reload, setReload] = useState(0);
   const [sort, setSort] = useState<Sort>('name');
   const [descending, setDescending] = useState(false);
-  const [filter, setFilter] = useState('all');
-  const [view, setView] = useState<'list' | 'grid'>('list');
-  const [visibleCount, setVisibleCount] = useState(250);
+  const requestKey = JSON.stringify({ route, reload, signedIn });
+  const data = response?.key === requestKey ? response.data : undefined;
+  const listing = data && !('scanned' in data) ? data : null;
+  const results = data && 'scanned' in data ? data : null;
+  const busy = signedIn === true && response?.key !== requestKey;
+  const error = response?.key === requestKey ? response.error || '' : '';
+  const [filterState, setFilterState] = useState({ key: '', value: 'all' });
+  const filter = filterState.key === requestKey ? filterState.value : 'all';
+  const setFilter = (value: string) => setFilterState({ key: requestKey, value });
+  const [view, setView] = useState<'list' | 'grid'>(readView);
+  const [visibleState, setVisibleState] = useState({ key: '', value: 250 });
+  const visibleCount = visibleState.key === requestKey ? visibleState.value : 250;
+  const setVisibleCount = (value: number) => setVisibleState({ key: requestKey, value });
   const [toast, setToast] = useState('');
   const [menu, setMenu] = useState<MenuTarget | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -238,23 +268,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    try {
-      const stored: unknown = JSON.parse(localStorage.getItem('partyfinder.recent') || '[]');
-      if (Array.isArray(stored))
-        setRecent(
-          stored
-            .filter(
-              (x): x is Place => x && typeof x.path === 'string' && typeof x.name === 'string',
-            )
-            .slice(0, 5),
-        );
-      if (localStorage.getItem('partyfinder.view') === 'grid') setView('grid');
-    } catch {
-      /* local preferences are optional */
-    }
-  }, []);
-
-  useEffect(() => {
     if (!signedIn) return;
     const controller = new AbortController();
     api<Listing>('/api/list?path=%2F', { signal: controller.signal })
@@ -266,12 +279,6 @@ export default function App() {
   useEffect(() => {
     if (!signedIn) return;
     const controller = new AbortController();
-    setBusy(true);
-    setError('');
-    setResults(null);
-    setListing(null);
-    setVisibleCount(250);
-    setFilter('all');
     const request = route.q
       ? api<SearchResults>('/api/search', {
           method: 'POST',
@@ -284,8 +291,7 @@ export default function App() {
     request
       .then((data) => {
         if (controller.signal.aborted) return;
-        if ('scanned' in data) setResults(data);
-        else setListing(data);
+        setResponse({ key: requestKey, data });
         if (route.path !== '/')
           setRecent((previous) => {
             const next = [
@@ -303,13 +309,10 @@ export default function App() {
       .catch((error) => {
         if (controller.signal.aborted) return;
         if (error instanceof ApiError && error.status === 401) setSignedIn(false);
-        else setError(error.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setBusy(false);
+        else setResponse({ key: requestKey, error: error.message });
       });
     return () => controller.abort();
-  }, [signedIn, route.path, route.q, route.recursive, route.limit, reload]);
+  }, [signedIn, route, requestKey, folderName]);
 
   function navigate(next: Partial<typeof route>) {
     setMenu(null);
@@ -371,8 +374,7 @@ export default function App() {
       await api('/api/session', { method: 'DELETE' });
       setSignedIn(false);
       setVolumes([]);
-      setListing(null);
-      setResults(null);
+      setResponse(null);
       setRecent([]);
       try {
         localStorage.removeItem('partyfinder.recent');
@@ -960,7 +962,7 @@ export default function App() {
             )}
             {!busy && !error && entries.length > visibleCount && (
               <div className="load-more">
-                <button className="secondary" onClick={() => setVisibleCount((n) => n + 250)}>
+                <button className="secondary" onClick={() => setVisibleCount(visibleCount + 250)}>
                   Show more items
                 </button>
               </div>
