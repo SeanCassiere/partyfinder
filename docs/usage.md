@@ -24,11 +24,32 @@ Matching ignores ASCII letter case, consistently with Copyparty's default search
 
 Copyparty has no offset-based search pagination. “Load more results” reruns the query with a larger candidate limit, starting at 250 and stopping at 8,000. The server also has its own limit (`--srch-hits`, normally 7,999), which may be lower. Its API can report `trunc: false` when that hard limit is reached, so counts are **results returned**, never a guaranteed total. Narrow the phrase or enter a deeper directory if necessary. Queries containing SQL wildcard characters retrieve broader candidates and are filtered literally afterward, so their candidate limits may be reached sooner.
 
-Search URLs preserve the directory, phrase, and recursion choice. Opening a result's parent folder exits search; browser Back restores the search. `/` focuses search, Escape clears it, and Alt+Up opens the parent folder.
+Search URLs preserve the directory, phrase, and recursion choice. Opening a result's parent folder exits search; browser Back restores the search.
+
+## Keyboard
+
+The file listing is a single tab stop, like a real file manager: Tab reaches it once, then the arrow keys move within it. Press **?** — or **Keyboard shortcuts** at the bottom of the sidebar — to see this list in the app.
+
+| Keys                    | What they do                                                                                                                                                           |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                     | Focus the search box.                                                                                                                                                  |
+| `Esc`                   | Clear the search when it is focused or showing results; close an open menu or dialog.                                                                                  |
+| `Alt`+`↑`               | Open the parent folder.                                                                                                                                                |
+| `?`                     | Open the keyboard shortcuts dialog.                                                                                                                                    |
+| `↑` `↓`                 | Move to the previous/next row. In grid view they move by a whole row of cards.                                                                                         |
+| `←` `→`                 | List view: step through the focused row's own controls (download, open, **…**) and back out to the row. Grid view: move one card left or right.                        |
+| `Enter`                 | Open the focused entry — folders open in place, files open in Copyparty.                                                                                               |
+| `Space`                 | Select or deselect the focused row.                                                                                                                                    |
+| `Home` `End`            | First or last row.                                                                                                                                                     |
+| `PageUp` `PageDown`     | Move ten rows.                                                                                                                                                         |
+| `Shift`+`F10`, menu key | Open the entry menu for the focused row.                                                                                                                               |
+| Letters                 | Type-ahead: jump to the next entry whose name starts with what you type. Case- and accent-insensitive, so `o` finds `Ölfilter`. The buffer clears after a short pause. |
+
+A **Skip to file list** link is the first thing Tab reaches on every page. Sort headers stay in the tab order, so the table can be re-sorted from the keyboard alone. Inside the entry menu and the rename/delete dialogs, focus is trapped until you close them, and it returns to the row you came from — including after a rename.
 
 ## Rename and delete
 
-Right-click a row/card, use its **…** button (including on mobile), or focus an item and press **Shift+F10**. Arrow keys navigate the menu; Escape dismisses it. Permissions are checked for the selected item's actual location, including recursive-search results, then rechecked server-side before each operation. Copyparty remains the final authority and can deny actions through its configuration or hooks.
+Right-click a row/card, use its **…** button (including on mobile), or focus an item and press **Shift+F10**. Arrow keys navigate the menu, first letters jump between its items, and Escape dismisses it. Permissions are checked for the selected item's actual location, including recursive-search results, then rechecked server-side before each operation. Copyparty remains the final authority and can deny actions through its configuration or hooks.
 
 Rename stays in the same directory and requires read/move permissions plus write permission on the destination. Existing names are rejected, including case-only renames. Names cannot contain slashes, backslashes, control characters, or exceed 255 UTF-8 bytes. Root and top-level locations are protected. Copyparty also rejects moving mountpoints and folders containing mounted volumes. Directory renames are **not transactional**: another client can change the destination after the preflight check; upstream failure can leave partial changes. Refresh and inspect before retrying.
 
