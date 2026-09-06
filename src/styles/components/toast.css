@@ -1,0 +1,34 @@
+/*
+ * Toast. The visual box (position, surface, elevation) lives with the other
+ * floating layers in utilities.css — the design-token test allows --shadow-menu
+ * only in menu.css, dialog.css and utilities.css. This file adds the pieces the
+ * region needs: the dismiss control and the entrance transition.
+ */
+.toast span {
+  overflow-wrap: anywhere;
+}
+.toast-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  margin-right: calc(var(--space-2) * -1);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: background-color var(--motion-fast) linear;
+}
+.toast-dismiss:hover {
+  background: var(--surface);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .toast {
+    animation: toast-in var(--motion-fast) ease-out;
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+  }
+}

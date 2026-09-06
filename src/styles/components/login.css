@@ -1,0 +1,96 @@
+/*
+ * Sign-in. One centred column on a flat --bg: no gradients, no art, no card
+ * shadow. The form gets a hairline border so the field group reads as a unit.
+ */
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: var(--space-6);
+}
+.login-theme {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+}
+.login-card {
+  width: 100%;
+  max-width: 320px;
+  text-align: left;
+}
+.login-card .login-brand {
+  margin-bottom: var(--space-6);
+  padding: 0;
+}
+.login-card h1 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-strong);
+}
+.login-host {
+  font-size: var(--text-base);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+  overflow-wrap: anywhere;
+}
+.login-host strong {
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+.login-card form {
+  margin-top: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  background: var(--bg);
+}
+.login-card label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+.login-card input {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  font-size: var(--text-base);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+.login-card input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.login-submit {
+  width: 100%;
+  margin-top: var(--space-3);
+}
+.login-guest {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.login-guest p {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.login-card [aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: default;
+}
+.error-box {
+  padding: var(--space-2) var(--space-3);
+  background: var(--danger-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--danger);
+  margin-top: var(--space-3);
+  overflow-wrap: anywhere;
+}
