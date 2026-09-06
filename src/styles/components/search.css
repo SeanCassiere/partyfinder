@@ -1,0 +1,138 @@
+/* Search lives in the toolbar row: a plain bordered field, never a card. */
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--control-height);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.search-field > svg {
+  color: var(--icon-default);
+}
+.search-field input {
+  border: 0;
+  background: none;
+  flex: 1;
+  height: 100%;
+  font-size: var(--text-base);
+  color: var(--text);
+}
+.search-field input::placeholder {
+  color: var(--text-muted);
+}
+.clear-search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.clear-search:hover {
+  background: var(--surface);
+}
+kbd {
+  font-family: var(--font-mono);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  height: 18px;
+  min-width: 18px;
+  padding: 0 var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  transition: background-color var(--motion-fast) linear;
+}
+.primary:hover:not(:disabled):not([aria-disabled='true']) {
+  background: color-mix(in srgb, var(--accent) 88%, var(--text));
+  border-color: color-mix(in srgb, var(--accent) 88%, var(--text));
+}
+/*
+ * Submit is neutral until there is something to submit. An empty query used to render the accent
+ * fill behind a disabled attribute, which the UA washed out into an unreadable pale blue; the
+ * empty state is now a plain icon button (no `opacity`), and `.primary` is added only when the
+ * query is non-empty. `aria-disabled` keeps the control focusable so its reason can be read.
+ */
+.search-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--control-height);
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  transition: background-color var(--motion-fast) linear;
+}
+.search-submit:hover {
+  background: var(--surface);
+}
+.search-submit.primary {
+  padding: 0 var(--space-2);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+/* Busy: the accent fill stays put rather than reacting to the pointer. */
+.search-submit.primary[aria-disabled='true']:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Recursive scope: a real checkbox with a 24px+ target. */
+
+.scope-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  min-height: var(--control-height);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+.scope-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}

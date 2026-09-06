@@ -1,0 +1,15 @@
+.theme-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.theme-picker svg {
+  color: var(--icon-default);
+}
+.login-theme {
+  position: absolute;
+  right: var(--space-6);
+  top: var(--space-6);
+}
