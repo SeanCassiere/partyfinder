@@ -37,6 +37,29 @@ COPYPARTY_SOURCE="$PWD/work/copyparty" \
 COPYPARTY_PYTHON="$PWD/work/venv/bin/python" pnpm test
 ```
 
+### Run without a Copyparty server
+
+`scripts/mock-upstream.mjs` is a dependency-free mock upstream (Node built-ins only) that speaks the same `?ls`, `?srch`, `?move` and `?delete` contract as Copyparty. It serves a fixture tree with nested folders, every file-type family, sizes from 0 B to multi-GiB, timestamps from 2016 to 2026, long UTF-8 names such as `Ölfilter — größe (2024) 日本語.mkv`, names with spaces and quotes, an empty folder, and a 323-entry folder that exercises "Show more". Renames and deletes mutate the in-memory tree, so the dialogs can be exercised end to end; restart the mock to reset it.
+
+Two terminals:
+
+```sh
+pnpm dev:mock          # http://127.0.0.1:3931/ — set MOCK_PORT to change it
+```
+
+```sh
+COPYPARTY_URL=http://127.0.0.1:3931/ \
+SESSION_SECRET=local-development-secret-at-least-32-chars \
+COOKIE_SECURE=false \
+NODE_ENV=development \
+ALLOW_FOLDER_DELETE=true \
+pnpm dev
+```
+
+`server/runtime.ts` reads exactly five variables: **`COPYPARTY_URL`** is the only required one. `SESSION_SECRET` is required (32+ characters) unless `NODE_ENV=development`, where an ephemeral secret is generated per restart. `COOKIE_SECURE` must be `false` for local HTTP. `COPYPARTY_AUTH_HEADER` defaults to `PW` (the mock honours the same variable). `ALLOW_FOLDER_DELETE` defaults to `false`; set it to `true` only to exercise the folder-delete dialog.
+
+Open `http://127.0.0.1:3925` and sign in with any password — the mock accepts anything and returns `read/write/move/delete`, so the rename and delete menu items are enabled. **Browse as guest** connects anonymously with read-only permissions, matching a real read-only volume.
+
 ### Build the Docker image locally
 
 For development from a source checkout, layer the explicit build override over the deployment file:
