@@ -1,0 +1,52 @@
+/*
+ * Forced colours (Windows High Contrast, `forced-colors: active`).
+ *
+ * The UA replaces every author colour with the user's system palette, which
+ * flattens the three places this design conveys state with a background fill
+ * alone: the selected row, the selected card, and the pressed/current chrome
+ * (view toggle, active nav item). Those cues are restated here with system
+ * colour keywords, which the UA does honour.
+ *
+ * Imported last so these rules win over the component sheets at equal
+ * specificity. Everything else — hairlines, text, icons — is already handled
+ * correctly by the UA's own substitution.
+ */
+
+@media (forced-colors: active) {
+  /* Selection: a real system highlight, with its matching foreground. */
+  tbody tr[aria-selected='true'],
+  .file-card[aria-selected='true'] {
+    forced-color-adjust: none;
+    background: Highlight;
+    border-color: Highlight;
+  }
+  tbody tr[aria-selected='true'] :is(td, a, button, span, svg),
+  .file-card[aria-selected='true'] :is(a, button, span, svg) {
+    color: HighlightText;
+    /* .entry-icon.directory sets an explicit stroke; fold it back into colour. */
+    stroke: currentColor;
+  }
+
+  /* Pressed and current chrome, where --accent-subtle was the only signal. */
+  .nav-item.active,
+  .view-toggle button.selected,
+  [aria-pressed='true'] {
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
+  }
+
+  /*
+   * Keep the focus ring distinct from the selection highlight: a focused,
+   * selected row must still read as two separate facts.
+   */
+  :focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 1px;
+  }
+  tbody tr:focus-visible,
+  .file-card:focus-visible,
+  .menu-item:focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: -2px;
+  }
+}

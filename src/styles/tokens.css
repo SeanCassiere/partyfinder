@@ -1,0 +1,135 @@
+/*
+ * Design tokens. This is the ONLY file in src/styles allowed to contain a raw
+ * colour literal (see tests/design-tokens.test.ts, which also asserts the
+ * contrast of every documented pair in both themes).
+ *
+ * Themes are driven exclusively by `data-theme` on <html>, written before paint
+ * by public/theme-init.js and kept in sync by src/components/ThemePicker.tsx.
+ * "System" is resolved to a concrete light/dark value there; do not add
+ * `@media (prefers-color-scheme)` blocks here or the explicit override breaks.
+ */
+
+:root {
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-strong: 600;
+
+  /* Spacing — 4px base, eight steps, no exceptions */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Radii — three values */
+  --radius-sm: 3px;
+  --radius: 6px;
+  --radius-full: 999px;
+
+  /* Motion */
+  --motion-fast: 120ms;
+
+  /* Density */
+  --row-height: 32px;
+  --control-height: 28px;
+  --toolbar-height: 44px;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --bg: #ffffff;
+  --surface: #f6f7f9;
+  --surface-raised: #ffffff;
+
+  /* Lines */
+  --border: #888e97;
+  --border-strong: #6b7280;
+
+  /* Text */
+  --text: #16191d;
+  --text-muted: #4a515c;
+  --text-subtle: #5f6773;
+
+  /* Accent — selection and focus only */
+  --accent: #1f5fd6;
+  --accent-fg: #ffffff;
+  --accent-subtle: #e8f0fd;
+  --focus: #1f5fd6;
+
+  /* Status */
+  --danger: #b3261e;
+  --danger-fg: #ffffff;
+  --danger-subtle: #fdecea;
+  --warning: #7a5510;
+  --warning-subtle: #fdf6e3;
+  --success: #146c43;
+
+  /* Icon hues — folder plus one muted hue per file family */
+  --folder: #ad7d09;
+  --icon-default: #5f6773;
+  --icon-image: #3f7a52;
+  --icon-video: #7c5cbf;
+  --icon-audio: #a8467a;
+  --icon-archive: #8a6a2f;
+  --icon-code: #2f7590;
+  --icon-doc: #5a6b8c;
+
+  /* Elevation — floating layers only (menu, dialog, toast) */
+  --shadow-menu: 0 2px 4px #0000001a, 0 8px 20px #00000014;
+  --shadow-dialog: 0 4px 8px #00000021, 0 16px 40px #0000001f;
+  --backdrop: #16191d8f;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #16191d;
+  --surface: #1d2126;
+  --surface-raised: #22262c;
+
+  --border: #6d7480;
+  --border-strong: #8b93a0;
+
+  --text: #e6e9ee;
+  --text-muted: #b3bac4;
+  --text-subtle: #9099a5;
+
+  --accent: #6ea8ff;
+  --accent-fg: #10131a;
+  --accent-subtle: #1c2a41;
+  --focus: #8fc0ff;
+
+  --danger: #ff9d95;
+  --danger-fg: #16191d;
+  --danger-subtle: #3a1f1d;
+  --warning: #e0bd72;
+  --warning-subtle: #332a17;
+  --success: #6cc48f;
+
+  --folder: #d5b56a;
+  --icon-default: #9099a5;
+  --icon-image: #7fc09a;
+  --icon-video: #b49cf0;
+  --icon-audio: #e995bd;
+  --icon-archive: #cfae72;
+  --icon-code: #7fbcd8;
+  --icon-doc: #a3b3d0;
+
+  --shadow-menu: 0 2px 4px #00000059, 0 8px 20px #0000004d;
+  --shadow-dialog: 0 4px 8px #00000066, 0 16px 40px #0000005c;
+  --backdrop: #0a0c0fb8;
+}
