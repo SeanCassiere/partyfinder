@@ -177,6 +177,37 @@ for (const theme of ['light', 'dark'] as const) {
   });
 }
 
+/*
+ * The ::selection highlight must be visible against every surface text can be
+ * selected on — including a selected row — and its text must stay readable.
+ * A subtle tint here once made selected search text indistinguishable.
+ */
+test('the text-selection highlight reads on every surface in both themes', () => {
+  const reset = readFileSync(join(stylesDir, 'reset.css'), 'utf8');
+  const rule = reset.match(/::selection\s*\{([^}]*)\}/);
+  assert.ok(rule, 'reset.css defines ::selection');
+  const background = rule[1]!.match(/background:\s*var\((--[\w-]+)\)/)?.[1];
+  const color = rule[1]!.match(/(?:^|[\s;])color:\s*var\((--[\w-]+)\)/)?.[1];
+  assert.ok(background, '::selection background is a token');
+  assert.ok(color, '::selection color is a token');
+  const surfaces = ['--bg', '--surface', '--surface-raised', '--accent-subtle'];
+  for (const theme of ['light', 'dark'] as const) {
+    const bg = tokens[theme][background]!;
+    const fg = tokens[theme][color]!;
+    assert.ok(
+      contrast(fg, bg) >= THRESHOLD.text,
+      `${theme}: ${color} on ${background} = ${contrast(fg, bg).toFixed(2)}:1`,
+    );
+    for (const surface of surfaces) {
+      const ratio = contrast(bg, tokens[theme][surface]!);
+      assert.ok(
+        ratio >= THRESHOLD.ui,
+        `${theme}: ${background} against ${surface} = ${ratio.toFixed(2)}:1 (needs 3:1)`,
+      );
+    }
+  }
+});
+
 test('both themes define the same token names and set color-scheme', () => {
   const css = readFileSync(tokensFile, 'utf8');
   assert.match(css, /:root\s*\{[^}]*color-scheme:\s*light/s);
