@@ -1,12 +1,20 @@
-FROM node:22-alpine AS build
+# check=skip=InvalidDefaultArgInFrom
+# The Node version comes from .nvmrc; pass it with --build-arg NODE_VERSION="$(cat .nvmrc)".
+ARG NODE_VERSION
+
+FROM node:${NODE_VERSION}-alpine AS build
 WORKDIR /app
-RUN corepack enable
+COPY .nvmrc ./
+RUN [ "$(node -p 'process.versions.node.split(".")[0]')" = "$(cut -d. -f1 .nvmrc)" ] \
+  || { echo "NODE_VERSION build arg must match .nvmrc ($(cat .nvmrc))" >&2; exit 1; }
+# Node 25+ no longer bundles Corepack; it installs the pnpm pinned in packageManager.
+RUN npm install -g corepack@0.36.0 && corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm run build
 
-FROM node:22-alpine AS runtime
+FROM node:${NODE_VERSION}-alpine AS runtime
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3925
 ARG APP_VERSION=dev
 ARG COMMIT_SHA=unknown

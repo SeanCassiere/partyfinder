@@ -4,11 +4,13 @@
 
 Built with React, TypeScript, Vite, and [Nitro's Vite integration](https://nitro.build/docs/vite). Nitro 3 beta is pinned in `package.json` and the pnpm lockfile. One dev server, one production build, one Docker container.
 
-Use Node **22.14+ (22.x)** or **24.10+**; `.nvmrc`, Docker, and CI use Node 22. pnpm **11.25.0** is pinned in `packageManager`. The minimum Node version also covers semantic-release.
+Use Node **26**. `.nvmrc` is the single source of the Node version: `nvm use`/`fnm use`, CI (`node-version-file`), and the Docker build (`NODE_VERSION` build argument) all read it. pnpm **11.25.0** is pinned in `packageManager`.
 
 ```sh
 git clone git@github.com:SeanCassiere/partyfinder.git
 cd partyfinder
+nvm use # or: fnm use
+npm install -g corepack # Node 25+ no longer bundles Corepack
 corepack enable
 pnpm install --frozen-lockfile
 cp .env.example .env
@@ -65,8 +67,10 @@ Open `http://127.0.0.1:3925` and sign in with any password — the mock accepts 
 For development from a source checkout, layer the explicit build override over the deployment file:
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+NODE_VERSION="$(cat .nvmrc)" docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
+
+`NODE_VERSION` selects the `node:<version>-alpine` base image and must match `.nvmrc`; the build fails otherwise. For a plain image build, use `docker build --build-arg NODE_VERSION="$(cat .nvmrc)" -t partyfinder:local .`.
 
 This builds and runs `partyfinder:local` with the same environment and security settings. The override is not loaded by normal `docker compose` commands. To return to the published image, run `docker compose pull` followed by `docker compose up -d` without the override.
 

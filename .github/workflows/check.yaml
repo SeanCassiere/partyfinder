@@ -34,4 +34,4 @@ jobs:
         env:
           COPYPARTY_SOURCE: ${{ github.workspace }}/work/copyparty
       - run: pnpm build
-      - run: docker build -t partyfinder:test .
+      - run: docker build --build-arg NODE_VERSION="$(cat .nvmrc)" -t partyfinder:test .

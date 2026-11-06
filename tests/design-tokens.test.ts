@@ -192,8 +192,8 @@ test('the text-selection highlight reads on every surface in both themes', () =>
   assert.ok(color, '::selection color is a token');
   const surfaces = ['--bg', '--surface', '--surface-raised', '--accent-subtle'];
   for (const theme of ['light', 'dark'] as const) {
-    const bg = tokens[theme][background]!;
-    const fg = tokens[theme][color]!;
+    const bg: string = tokens[theme][background]!;
+    const fg: string = tokens[theme][color]!;
     assert.ok(
       contrast(fg, bg) >= THRESHOLD.text,
       `${theme}: ${color} on ${background} = ${contrast(fg, bg).toFixed(2)}:1`,
