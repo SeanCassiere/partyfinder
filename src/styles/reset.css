@@ -70,9 +70,15 @@ h2,
 h3 {
   font-weight: var(--weight-strong);
 }
+/*
+ * Text selection uses the solid accent, not --accent-subtle. The subtle tint is
+ * ~1.2:1 against --bg and identical to a selected row, so highlighted text in
+ * the search field (or inside a selected row) was effectively invisible.
+ * tests/design-tokens.test.ts asserts this reads against every surface.
+ */
 ::selection {
-  background: var(--accent-subtle);
-  color: var(--text);
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 /*
  * Theme flips are instantaneous. Every fill in this app is token-driven, and a
