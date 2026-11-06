@@ -78,6 +78,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/release.mjs
 
+      - name: Read Node version
+        if: steps.semantic.outputs.released == 'true'
+        id: node
+        run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
       - name: Set up QEMU
         if: steps.semantic.outputs.released == 'true'
         uses: docker/setup-qemu-action@v4
@@ -94,6 +98,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
+            NODE_VERSION=${{ steps.node.outputs.version }}
             APP_VERSION=${{ steps.semantic.outputs.version }}
             COMMIT_SHA=${{ github.event.workflow_run.head_sha }}
           tags: |

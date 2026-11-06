@@ -35,7 +35,39 @@ test('documentation links resolve after splitting the README into focused guides
 
 test('building from source requires the explicit development override', async () => {
   const compose = await readFile(new URL('../docker-compose.build.yml', import.meta.url), 'utf8');
-  assert.match(compose, /^\s+build: \.$/m);
+  assert.match(compose, /^\s+context: \.$/m);
   assert.match(compose, /^\s+image: partyfinder:local$/m);
   assert.match(compose, /^\s+pull_policy: build$/m);
+});
+
+test('every Node version consumer reads .nvmrc instead of hardcoding a version', async () => {
+  const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
+  const nvmrc = (await read('.nvmrc')).trim();
+  assert.match(nvmrc, /^\d+(\.\d+){0,2}$/, '.nvmrc holds a plain Node version');
+
+  const dockerfile = await read('Dockerfile');
+  const froms = [...dockerfile.matchAll(/^FROM\s+(\S+)/gm)].map((match) => match[1]);
+  assert.ok(froms.length > 0);
+  for (const image of froms) assert.equal(image, 'node:${NODE_VERSION}-alpine');
+  assert.match(dockerfile, /^ARG NODE_VERSION$/m, 'NODE_VERSION has no hardcoded default');
+
+  for (const path of ['.github/workflows/check.yaml', '.github/workflows/release.yml']) {
+    const workflow = await read(path);
+    assert.doesNotMatch(workflow, /node-version:/, `${path} must use node-version-file`);
+    for (const [, file] of workflow.matchAll(/node-version-file:\s*(\S+)/g)) {
+      assert.equal(file, '.nvmrc', path);
+    }
+  }
+  assert.match(
+    await read('.github/workflows/check.yaml'),
+    /--build-arg NODE_VERSION="\$\(cat \.nvmrc\)"/,
+  );
+  assert.match(
+    await read('.github/workflows/release.yml'),
+    /NODE_VERSION=\$\{\{ steps\.node\.outputs\.version \}\}/,
+  );
+  assert.match(await read('docker-compose.build.yml'), /NODE_VERSION: \$\{NODE_VERSION:\?/);
+
+  const { engines } = JSON.parse(await read('package.json'));
+  assert.equal(engines.node, `>=${nvmrc.split('.')[0]}`, 'engines.node follows the .nvmrc major');
 });
