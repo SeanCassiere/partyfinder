@@ -192,6 +192,9 @@ test('navigation decodes names once, preserves keys, and scopes current-folder s
 
 test('recursive search rechecks scope and literal wildcard matches; preserves proxy prefix and file keys', async () => {
   const client = new Copyparty('https://host.test/party/', 'PW', async (url, options) => {
+    // The searched folder's own listing supplies its permissions alongside the hits.
+    if (String(url) === 'https://host.test/party/media/movies/?ls=')
+      return Response.json({ dirs: [], files: [], perms: ['read', 'admin'] });
     assert.equal(String(url), 'https://host.test/party/?srch=');
     assert.equal(options?.method, 'POST');
     const payload = JSON.parse(String(options?.body));
@@ -213,6 +216,7 @@ test('recursive search rechecks scope and literal wildcard matches; preserves pr
     'https://host.test/party/media/movies/sub/100%25_done.txt?k=secret-key',
   );
   assert.equal(result.more, true);
+  assert.deepEqual(result.permissions, ['read', 'admin']);
 });
 
 test('API never forwards credentials to redirects or foreign listing hrefs', async () => {
@@ -268,4 +272,36 @@ test('search handles an encoded proxy prefix and signals the app candidate ceili
   assert.equal(result.entries[0].url, 'https://host.test/party%20files/media/xyz.txt');
   assert.equal(result.more, false);
   assert.equal(result.capped, true);
+});
+
+test('rescan asks Copyparty to scan the folder volume and explains a refusal', async () => {
+  const seen: string[] = [];
+  let allowed = true;
+  const app = createApp({ upstream: base, secret, secureCookie: false }, async (url, init) => {
+    seen.push(`${init?.method ?? 'GET'} ${String(url)}`);
+    return allowed
+      ? new Response('<p>ok</p>', { headers: { 'Content-Type': 'text/html' } })
+      : new Response('denied', { status: 403 });
+  });
+  const cookie = `partyfinder_session=${new Sessions(secret).seal('admin-password')}`;
+  const rescan = (headers: Record<string, string>) =>
+    app(
+      new Request('http://app.test/api/rescan', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ path: '/media/TV Shows' }),
+      }),
+    );
+
+  assert.equal((await rescan({})).status, 401);
+  assert.equal((await rescan({ Cookie: cookie, Origin: 'https://evil.test' })).status, 403);
+  assert.deepEqual(seen, []);
+
+  assert.equal((await rescan({ Cookie: cookie })).status, 200);
+  assert.deepEqual(seen, ['GET http://copyparty.test/media/TV%20Shows/?scan=']);
+
+  allowed = false;
+  const refused = await rescan({ Cookie: cookie });
+  assert.equal(refused.status, 403);
+  assert.match(((await refused.json()) as { error: string }).error, /admin permission/);
 });

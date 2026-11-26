@@ -9,6 +9,7 @@
 //   POST <path>?move=<dest>      -> rename (in-memory)
 //   POST <path>?delete           -> delete (in-memory)
 //   GET  <path>?dl               -> synthetic file bytes
+//   GET  <folder>/?scan          -> start a (no-op) index rescan; admin only
 //
 // Authentication mirrors Copyparty: the password arrives in a header (PW by
 // default, see COPYPARTY_AUTH_HEADER). Any non-empty password is accepted and
@@ -19,7 +20,7 @@ const PORT = Number(process.env.MOCK_PORT ?? 3931);
 const HOST = process.env.MOCK_HOST ?? '127.0.0.1';
 const AUTH_HEADER = (process.env.COPYPARTY_AUTH_HEADER ?? 'PW').toLowerCase();
 const ACCOUNT = process.env.MOCK_ACCOUNT ?? 'tester';
-const MEMBER_PERMS = ['read', 'write', 'move', 'delete'];
+const MEMBER_PERMS = ['read', 'write', 'move', 'delete', 'admin'];
 const GUEST_PERMS = ['read'];
 
 const GiB = 1024 ** 3;
@@ -296,6 +297,14 @@ async function handle(req, res) {
     from.parent.children.delete(from.name);
     to.parent.children.set(to.name, node);
     return sendJson(res, { ok: true });
+  }
+
+  if (url.searchParams.has('scan')) {
+    // Copyparty requires read, write and admin on the volume, then scans in the background.
+    if (!['read', 'write', 'admin'].every((perm) => identity.perms.includes(perm)))
+      return sendJson(res, { error: "'scanvol' not allowed" }, 403);
+    res.writeHead(200, { 'content-type': 'text/html' });
+    return res.end('<!DOCTYPE html><p>rescan started</p>');
   }
 
   if (url.searchParams.has('delete')) {

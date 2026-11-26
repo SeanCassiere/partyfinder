@@ -1,3 +1,4 @@
+import { DatabaseZap } from 'lucide-react';
 import { plural } from '../lib/format';
 import type { Route } from '../lib/types';
 import type { SearchResults } from '../../shared/types';
@@ -59,6 +60,8 @@ export function ContentFooter({
   count,
   folders,
   files,
+  onRescan,
+  rescanning = false,
 }: {
   route: Route;
   searching: boolean;
@@ -67,6 +70,9 @@ export function ContentFooter({
   count: number;
   folders: number;
   files: number;
+  /** Present only for Copyparty admins of this volume; starts an index rescan. */
+  onRescan?: () => void;
+  rescanning?: boolean;
 }) {
   const status = busy
     ? ''
@@ -78,7 +84,21 @@ export function ContentFooter({
   return (
     <footer className="content-footer">
       <span>{status}</span>
-      {searching && route.recursive && !busy && !error && <span>Indexed files only</span>}
+      <span className="footer-end">
+        {searching && route.recursive && !busy && !error && <span>Indexed files only</span>}
+        {onRescan && (
+          <button
+            type="button"
+            className="footer-action"
+            disabled={rescanning}
+            title="Ask Copyparty to rescan this volume so search sees files changed outside Copyparty"
+            onClick={onRescan}
+          >
+            <DatabaseZap size={13} aria-hidden="true" />
+            {rescanning ? 'Starting rescan…' : 'Rescan index'}
+          </button>
+        )}
+      </span>
     </footer>
   );
 }

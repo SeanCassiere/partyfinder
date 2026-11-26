@@ -13,7 +13,7 @@
 - Folders, breadcrumbs, and sidebar locations are ordinary links: Cmd/Ctrl-click or middle-click opens them in a new tab.
 - Right-click a file or folder (or use its **…** button) for permission-aware rename and delete actions. Folder deletion requires operator opt-in; see [deletion safety](#rename-and-delete).
 - Open the current folder or individual files in Copyparty, or download through the authenticated proxy, including HTTP Range support.
-- Sign in with a Copyparty password or browse anonymously when allowed. No uploads, cross-directory moves, rescans, or administrative operations are exposed.
+- Sign in with a Copyparty password or browse anonymously when allowed. No uploads, cross-directory moves, or administrative operations are exposed, apart from an index rescan for Copyparty admins (see [stale search results](#stale-search-results)).
 
 ## How search behaves
 
@@ -26,6 +26,13 @@ Matching ignores ASCII letter case, consistently with Copyparty's default search
 Copyparty has no offset-based search pagination. “Load more results” reruns the query with a larger candidate limit, starting at 250 and stopping at 8,000. The server also has its own limit (`--srch-hits`, normally 7,999), which may be lower. Its API can report `trunc: false` when that hard limit is reached, so counts are **results returned**, never a guaranteed total. Narrow the phrase or enter a deeper directory if necessary. Queries containing SQL wildcard characters retrieve broader candidates and are filtered literally afterward, so their candidate limits may be reached sooner.
 
 Search URLs preserve the directory, phrase, and recursion choice. Opening a result's parent folder exits search; browser Back restores the search.
+
+### Stale search results
+
+Browsing always reads the folder live, but subfolder search reads Copyparty's index. Renames, moves, and deletes made through Copyparty (its web UI, Partyfinder, WebDAV, and so on) update the index immediately. Changes made on disk by anything else, such as a host file manager, an OS-level SMB/NFS share, rsync, or media managers like Sonarr and Radarr, are not seen until Copyparty rescans. Until then, search can return files that have moved or been deleted, and miss new ones.
+
+- **Rescan now:** users with Copyparty's admin (`a`) permission on the volume see **Rescan index** in the status line under the results. It asks Copyparty to rescan that volume in the background; run the search again once it finishes. Copyparty also needs read and write access there, and the button fails if the server runs with `no-rescan`. Copyparty pauses uploads while it rescans.
+- **Keep it fresh automatically:** set `re-maxage: 900` in Copyparty's `[global]` section to rescan every volume every 15 minutes, or the volume flag `scan: 900` per volume. `e2dsa` alone only scans at startup.
 
 ## Keyboard
 

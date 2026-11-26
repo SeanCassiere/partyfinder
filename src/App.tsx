@@ -41,6 +41,7 @@ export default function App() {
   const [view, setView] = useState<View>(readView);
   const [toast, setToast] = useState('');
   const [shortcuts, setShortcuts] = useState(false);
+  const [rescanning, setRescanning] = useState(false);
   const { menu, setMenu, contextProps, openMenuAt } = useEntryMenu();
   const { route, draft, setDraft, navigate, openFolder } = useRoute(() => setMenu(null));
   const searching = Boolean(route.q);
@@ -166,6 +167,18 @@ export default function App() {
       setToast('Clipboard unavailable. Open the file in Copyparty to copy its link.');
     }
   }
+  // No try/finally: the React Compiler skips components that use `finally`.
+  async function rescan() {
+    setRescanning(true);
+    let message = 'Copyparty is rescanning. Search again once it finishes to see the changes.';
+    try {
+      await api('/api/rescan', { method: 'POST', body: JSON.stringify({ path: route.path }) });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    setRescanning(false);
+    setToast(message);
+  }
   function download(entry: Entry) {
     return `/api/file?path=${encodeURIComponent(entry.path)}${entry.key ? '&key=' + encodeURIComponent(entry.key) : ''}`;
   }
@@ -222,6 +235,8 @@ export default function App() {
     : results?.permissions
       ? { path: results.path, permissions: results.permissions }
       : null;
+  // Copyparty only lets volume admins trigger a rescan, so only they see the button.
+  const canRescan = Boolean(knownFolder?.permissions.includes('admin'));
   /** Menu permissions without a request, when the loaded data vouches for them. */
   function knownPermissions(entry: Entry) {
     if (isProtectedPath(entry.path) || entry.parent === knownFolder?.path)
@@ -340,6 +355,8 @@ export default function App() {
               count={entries.length}
               folders={folders}
               files={files}
+              onRescan={canRescan ? () => void rescan() : undefined}
+              rescanning={rescanning}
             />
           </main>
         </div>

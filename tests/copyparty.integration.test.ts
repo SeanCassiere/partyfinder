@@ -50,7 +50,7 @@ test(
         '-p',
         String(port),
         '-v',
-        `${join(fixture, 'media')}:/media:r:rwmd,tester`,
+        `${join(fixture, 'media')}:/media:r:rwmda,tester`,
         '-a',
         'tester:fixture-password',
         '-e2dsa',
@@ -102,6 +102,7 @@ test(
         '/media/movies/action/xyz report.txt',
         '/media/movies/xyz.txt',
       ]);
+      assert.ok(recursive.permissions?.includes('admin'), 'recursive search reports folder perms');
       for (const [phrase, expected] of [
         ['%_', '100%_done.txt'],
         ['"quotes"', 'with "quotes".txt'],
@@ -157,6 +158,22 @@ test(
       await client.delete(movedFolder.path, 'fixture-password', true);
       assert.equal((await client.actions('/media', 'fixture-password', true)).delete, false);
       await assert.rejects(client.delete('/media', 'fixture-password', true), /unavailable/);
+
+      // A file added behind Copyparty's back stays out of search until a rescan.
+      await writeFile(join(fixture, 'media/movies/action/xyz added on disk.txt'), 'late\n');
+      const names = async () =>
+        (await client.search('/media/movies', 'xyz', true, 250, 'fixture-password')).entries.map(
+          (e) => e.name,
+        );
+      assert.ok(!(await names()).includes('xyz added on disk.txt'));
+      await assert.rejects(client.rescan('/media/movies', ''), /admin permission/);
+      assert.deepEqual(await client.rescan('/media/movies', 'fixture-password'), { ok: true });
+      let found = false;
+      for (let attempt = 0; attempt < 40 && !found; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        found = (await names()).includes('xyz added on disk.txt');
+      }
+      assert.ok(found, 'rescan indexes the file added on disk');
     } finally {
       child.kill('SIGTERM');
       await new Promise<void>((resolve) => {
