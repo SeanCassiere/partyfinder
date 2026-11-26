@@ -5,6 +5,7 @@ import { ResultsToolbar } from './ResultsToolbar';
 import { SearchForm } from './SearchForm';
 import { ThemePicker } from './ThemePicker';
 import { parentOf } from '../lib/format';
+import { copypartyFolderUrl } from '../lib/links';
 import type { Connection, Route, Sort, View } from '../lib/types';
 
 export function Toolbar({
@@ -54,11 +55,7 @@ export function Toolbar({
   onRefresh: () => void;
   onDisconnect: () => void;
 }) {
-  const upstream = connection
-    ? connection.url +
-      route.path.split('/').filter(Boolean).map(encodeURIComponent).join('/') +
-      (route.path === '/' ? '' : '/')
-    : undefined;
+  const upstream = connection ? copypartyFolderUrl(connection.url, route.path) : undefined;
   return (
     <header className="topbar">
       <div className="toolbar-group navigation-buttons">

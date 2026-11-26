@@ -9,7 +9,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
-import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { ExternalLink, FolderSearch, Pencil, Trash2 } from 'lucide-react';
 import { DeleteDialog } from './dialogs/DeleteDialog';
 import { RenameDialog } from './dialogs/RenameDialog';
 import { api } from '../lib/api';
@@ -72,6 +72,7 @@ export function EntryMenu({
   onChanged,
   onCloseFocus,
   permissions: known,
+  revealUrl,
 }: {
   target: MenuTarget;
   onClose: () => void;
@@ -97,6 +98,8 @@ export function EntryMenu({
    * server once and caches the answer for a minute.
    */
   permissions?: EntryPermissions;
+  /** Where "Show in Copyparty folder" goes; files only (see `copypartyRevealUrl`). */
+  revealUrl?: string;
 }) {
   const { entry } = target;
   const [loaded, setLoaded] = useState<EntryPermissions | null>(() => {
@@ -217,6 +220,16 @@ export function EntryMenu({
       icon: <ExternalLink size={16} aria-hidden />,
       href: entry.url,
     },
+    ...(revealUrl
+      ? [
+          {
+            id: 'reveal',
+            label: 'Show in Copyparty folder',
+            icon: <FolderSearch size={16} aria-hidden />,
+            href: revealUrl,
+          },
+        ]
+      : []),
     {
       id: 'rename',
       label: 'Rename…',

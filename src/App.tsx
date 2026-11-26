@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { api } from './lib/api';
+import { copypartyRevealUrl } from './lib/links';
 import { parentOf } from './lib/format';
 import { clearRecent, readRecent, readView, writeView } from './hooks/usePreference';
 import { useEntryMenu } from './hooks/useEntryMenu';
@@ -350,6 +351,11 @@ export default function App() {
             key={menu.entry.path}
             target={menu}
             permissions={knownPermissions(menu.entry)}
+            revealUrl={
+              connection && menu.entry.kind === 'file'
+                ? copypartyRevealUrl(connection.url, menu.entry.parent, menu.entry.name)
+                : undefined
+            }
             onClose={() => setMenu(null)}
             onChanged={(message) => {
               setToast(message);
