@@ -8,6 +8,7 @@ import {
   normalizePath,
   parentPath,
 } from './search.js';
+import { entryPermissions, isProtectedPath } from '../shared/permissions.js';
 import type { Entry, Listing, SearchResults } from '../shared/types.js';
 
 interface UpstreamEntry {
@@ -164,26 +165,14 @@ export class Copyparty {
   }
 
   async actions(path: string, password: string, allowFolderDelete = false) {
-    if (path === '/' || parentPath(path) === '/')
-      return {
-        rename: false,
-        delete: false,
-        reason: 'Server roots and top-level locations are protected.',
-      };
+    if (isProtectedPath(path)) return entryPermissions({ path, kind: 'directory' }, []);
     const { listing, entry } = await this.target(path, password);
-    const perms =
+    // A folder can be a separate volume with its own permissions; ask for them.
+    const own =
       entry.kind === 'directory'
         ? (await this.list(path, password)).permissions
         : listing.permissions;
-    const read = perms.includes('read');
-    return {
-      rename: read && perms.includes('move') && listing.permissions.includes('write'),
-      delete: read && perms.includes('delete') && (entry.kind === 'file' || allowFolderDelete),
-      reason:
-        entry.kind === 'directory' && !allowFolderDelete
-          ? 'Folder deletion is disabled by the app operator. Rename still follows Copyparty permissions.'
-          : 'Actions follow your Copyparty permissions.',
-    };
+    return entryPermissions(entry, listing.permissions, own, allowFolderDelete);
   }
 
   async rename(path: string, name: unknown, password: string) {
@@ -262,6 +251,8 @@ export class Copyparty {
         more: false,
         capped: false,
         query: '',
+        // Every hit is directly in `path`, so the folder's permissions cover them all.
+        permissions: listing.permissions,
       };
     }
     const query = buildQuery(path, phrase, true);

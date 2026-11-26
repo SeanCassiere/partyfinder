@@ -27,6 +27,7 @@ import { Toast } from './components/Toast';
 import { Toolbar } from './components/Toolbar';
 import type { EntryActions } from './components/EntryRow';
 import type { Connection, Place, Sort, View } from './lib/types';
+import { entryPermissions, isProtectedPath } from '../shared/permissions';
 import type { Entry } from '../shared/types';
 
 export default function App() {
@@ -214,6 +215,23 @@ export default function App() {
     contextProps,
     menuPath: menu?.entry.path ?? null,
   };
+  // The folder whose permissions this view already has: the listing itself, or a current-folder search.
+  const knownFolder = listing
+    ? { path: listing.path, permissions: listing.permissions }
+    : results?.permissions
+      ? { path: results.path, permissions: results.permissions }
+      : null;
+  /** Menu permissions without a request, when the loaded data vouches for them. */
+  function knownPermissions(entry: Entry) {
+    if (isProtectedPath(entry.path) || entry.parent === knownFolder?.path)
+      return entryPermissions(
+        entry,
+        knownFolder?.permissions ?? [],
+        undefined,
+        connection?.allowFolderDelete,
+      );
+    return undefined;
+  }
   // Identity of the current listing; changing it parks the listing's roving focus back at the top.
   const listKey = `${route.path}|${route.q}|${route.recursive}|${filter}`;
 
@@ -331,6 +349,7 @@ export default function App() {
           <EntryMenu
             key={menu.entry.path}
             target={menu}
+            permissions={knownPermissions(menu.entry)}
             onClose={() => setMenu(null)}
             onChanged={(message) => {
               setToast(message);
