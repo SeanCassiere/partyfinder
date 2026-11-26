@@ -4,7 +4,7 @@
 
 Built with React, TypeScript, Vite, and [Nitro's Vite integration](https://nitro.build/docs/vite). Nitro 3 beta is pinned in `package.json` and the pnpm lockfile. One dev server, one production build, one Docker container.
 
-Use Node **26**. `.nvmrc` is the single source of the Node version: `nvm use`/`fnm use`, CI (`node-version-file`), and the Docker build (`NODE_VERSION` build argument) all read it. pnpm **11.25.0** is pinned in `packageManager`.
+Use Node **26**. `.nvmrc` is the single source of the Node version: `nvm use`/`fnm use`, CI (`node-version-file`), and the Docker build (`NODE_VERSION` build argument) all read it. pnpm **12.23.0** is pinned in `packageManager`.
 
 ```sh
 git clone git@github.com:SeanCassiere/partyfinder.git
