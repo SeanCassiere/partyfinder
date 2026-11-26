@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { entryPermissions } from '../shared/permissions.js';
-import { folderRoute, routeHref } from '../src/lib/links.js';
+import {
+  copypartyFolderUrl,
+  copypartyRevealUrl,
+  folderRoute,
+  routeHref,
+} from '../src/lib/links.js';
 
 test('folder links carry the same URL that openFolder pushes', () => {
   const current = { path: '/media', q: 'old', recursive: false, limit: 1000 };
@@ -9,6 +14,16 @@ test('folder links carry the same URL that openFolder pushes', () => {
   assert.equal(
     routeHref(folderRoute({ ...current, recursive: true }, '/media/Movies & TV')),
     '/?path=%2Fmedia%2FMovies+%26+TV',
+  );
+});
+
+test('Copyparty folder and reveal URLs encode paths and text-fragment reserved characters', () => {
+  const base = 'https://files.example.com/cp/';
+  assert.equal(copypartyFolderUrl(base, '/'), base);
+  assert.equal(copypartyFolderUrl(base, '/media/A #1'), `${base}media/A%20%231/`);
+  assert.equal(
+    copypartyRevealUrl(base, '/media', 'Spider-Man, Part 1 & 2.mkv'),
+    `${base}media/#:~:text=Spider%2DMan%2C%20Part%201%20%26%202.mkv`,
   );
 });
 
