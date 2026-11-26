@@ -16,27 +16,27 @@
     "format:check": "oxfmt --check ."
   },
   "dependencies": {
-    "lucide-react": "^1.69.0",
+    "lucide-react": "^1.80.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@semantic-release/commit-analyzer": "13.0.1",
-    "@semantic-release/github": "12.0.10",
+    "@semantic-release/github": "12.0.11",
     "@semantic-release/release-notes-generator": "14.1.1",
-    "@types/node": "^26.6.6",
-    "@types/react": "^19.3.0",
+    "@types/node": "^26.6.10",
+    "@types/react": "^19.3.3",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.2.1",
+    "@vitejs/plugin-react": "^6.3.0",
     "conventional-changelog-conventionalcommits": "9.3.1",
     "nitro": "3.0.261103-rc",
     "oxc-transform-react": "0.156.0",
     "oxfmt": "0.76.0",
-    "oxlint": "1.91.0",
+    "oxlint": "1.95.0",
     "semantic-release": "25.0.9",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "vite": "^8.3.6"
+    "vite": "^8.3.8"
   },
   "engines": {
     "node": ">=26"
