@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: 9001/copyparty
-          ref: 4e318d516531e6a9c683b21e58b9cb48131eb175
+          ref: e211aa26e536476f1423dc22b871780e18fd423a # v1.20.28
           path: work/copyparty
       - run: pip install jinja2
       - run: pnpm test
