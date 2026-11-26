@@ -33,7 +33,7 @@
     "oxc-transform-react": "0.156.0",
     "oxfmt": "0.80.0",
     "oxlint": "1.95.0",
-    "semantic-release": "25.0.9",
+    "semantic-release": "26.0.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"
