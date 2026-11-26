@@ -85,7 +85,7 @@
     flex-basis: 100%;
     order: -1;
   }
-  .breadcrumbs button {
+  .breadcrumbs a {
     max-width: 16ch;
     font-size: var(--text-sm);
   }

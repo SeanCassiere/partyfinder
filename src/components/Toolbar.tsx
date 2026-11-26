@@ -98,7 +98,7 @@ export function Toolbar({
         </button>
       </div>
 
-      <Breadcrumbs crumbs={crumbs} openFolder={openFolder} />
+      <Breadcrumbs crumbs={crumbs} />
 
       <SearchForm
         route={route}

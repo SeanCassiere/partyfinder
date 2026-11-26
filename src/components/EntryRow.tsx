@@ -1,5 +1,6 @@
 import { ArrowDownToLine, ChevronRight, ExternalLink, Link2, MoreHorizontal } from 'lucide-react';
 import { EntryIcon } from './EntryIcon';
+import { FolderLink } from './FolderLink';
 import type { EntryContextProps } from '../hooks/useEntryMenu';
 import type { Entry } from '../../shared/types';
 
@@ -31,14 +32,9 @@ export function EntryName({ entry, actions }: { entry: Entry; actions: EntryActi
       <EntryIcon entry={entry} />
       <div>
         {entry.kind === 'directory' ? (
-          <button
-            className="entry-name"
-            tabIndex={-1}
-            onClick={() => actions.openFolder(entry.path)}
-            title={entry.name}
-          >
+          <FolderLink className="entry-name" tabIndex={-1} path={entry.path} title={entry.name}>
             {entry.name}
-          </button>
+          </FolderLink>
         ) : (
           <a
             className="entry-name"
@@ -52,14 +48,14 @@ export function EntryName({ entry, actions }: { entry: Entry; actions: EntryActi
           </a>
         )}
         {actions.searching && (
-          <button
+          <FolderLink
             className="entry-parent"
             tabIndex={-1}
             title={`Open ${entry.parent}`}
-            onClick={() => actions.openFolder(entry.parent)}
+            path={entry.parent}
           >
             {entry.parent}
-          </button>
+          </FolderLink>
         )}
       </div>
     </div>
@@ -90,15 +86,15 @@ export function EntryRowActions({
         <MoreHorizontal size={16} strokeWidth={1.75} aria-hidden="true" />
       </button>
       {entry.kind === 'directory' ? (
-        <button
+        <FolderLink
           className="icon-button"
           tabIndex={-1}
           title={`Open ${entry.name}`}
           aria-label={`Open folder ${entry.name}`}
-          onClick={() => actions.openFolder(entry.path)}
+          path={entry.path}
         >
           <ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" />
-        </button>
+        </FolderLink>
       ) : (
         <>
           {copyLink && (

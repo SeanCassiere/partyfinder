@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { folderRoute, routeHref } from '../lib/links';
 import type { Route } from '../lib/types';
 
 export function readLocation(): Route {
@@ -40,17 +41,12 @@ export function useRoute(onNavigate: () => void) {
   function navigate(next: Partial<Route>) {
     onNavigate();
     const value = { ...route, ...next };
-    const params = new URLSearchParams();
-    if (value.path !== '/') params.set('path', value.path);
-    if (value.q) params.set('q', value.q);
-    if (!value.recursive) params.set('recursive', 'false');
-    if (value.limit !== 250) params.set('limit', String(value.limit));
-    history.pushState(null, '', '/' + (params.size ? '?' + params : ''));
+    history.pushState(null, '', routeHref(value));
     setRoute(value);
     if ('q' in next || 'path' in next) setDraft(value.q);
   }
   function openFolder(path: string) {
-    navigate({ path, q: '', limit: 250 });
+    navigate(folderRoute(route, path));
   }
 
   return { route, draft, setDraft, navigate, openFolder };
