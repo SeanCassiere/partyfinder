@@ -195,12 +195,14 @@
 .breadcrumbs li > svg {
   color: var(--text-muted);
 }
-.breadcrumbs button {
+.breadcrumbs a {
   font-size: var(--text-base);
   min-width: 0;
   flex: 0 1 auto;
   color: var(--text-muted);
   min-height: var(--control-height);
+  /* Links, not buttons: centre the single line of text the way a button would. */
+  line-height: var(--control-height);
   padding: 0 var(--space-1);
   border-radius: var(--radius-sm);
   max-width: 22ch;
@@ -209,10 +211,10 @@
   white-space: nowrap;
   transition: background-color var(--motion-fast) linear;
 }
-.breadcrumbs button:hover {
+.breadcrumbs a:hover {
   background: var(--surface);
 }
-.breadcrumbs button[aria-current='page'] {
+.breadcrumbs a[aria-current='page'] {
   color: var(--text);
   font-weight: var(--weight-medium);
 }
@@ -233,7 +235,7 @@
   white-space: nowrap;
 }
 /* The current folder keeps its width; ancestors truncate first. */
-.breadcrumbs li:last-child button {
+.breadcrumbs li:last-child a {
   flex-shrink: 0;
   max-width: 24ch;
 }

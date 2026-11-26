@@ -8,6 +8,7 @@ import { useListing } from './hooks/useListing';
 import { useRoute } from './hooks/useRoute';
 import { EmptyState, ErrorState, LoadingState } from './components/EmptyState';
 import { EntryMenu } from './components/EntryMenu';
+import { FolderNavigation } from './components/FolderLink';
 import { FileGrid } from './components/FileGrid';
 import { FileList } from './components/FileList';
 import {
@@ -217,119 +218,127 @@ export default function App() {
   const listKey = `${route.path}|${route.q}|${route.recursive}|${filter}`;
 
   return (
-    <div className="app-shell">
-      <a className="skip-link" href="#main">
-        Skip to file list
-      </a>
-      <Sidebar
-        route={route}
-        volumes={volumes}
-        recent={recent}
-        connection={connection}
-        openFolder={openFolder}
-        onDisconnect={() => void logout()}
-        onShowShortcuts={() => setShortcuts(true)}
-      />
-
-      <div className="main-shell">
-        <Toolbar
+    <FolderNavigation value={{ route, openFolder }}>
+      <div className="app-shell">
+        <a className="skip-link" href="#main">
+          Skip to file list
+        </a>
+        <Sidebar
           route={route}
-          crumbs={crumbs}
+          volumes={volumes}
+          recent={recent}
           connection={connection}
-          busy={busy}
-          folderName={folderName}
-          draft={draft}
-          setDraft={setDraft}
-          searching={searching}
-          inputRef={input}
-          onSubmit={submitSearch}
-          navigate={navigate}
-          filter={filter}
-          setFilter={setFilter}
-          setVisibleCount={setVisibleCount}
-          view={view}
-          setView={chooseView}
-          sort={sort}
-          descending={descending}
-          changeSort={changeSort}
-          openFolder={openFolder}
-          onRefresh={refresh}
           onDisconnect={() => void logout()}
+          onShowShortcuts={() => setShortcuts(true)}
         />
 
-        <main className="main-content" id="main" tabIndex={-1}>
-          <h1 className="sr-only">{searching ? `Search results for “${route.q}”` : folderName}</h1>
-
-          <section
-            className={`file-panel ${view}`}
-            aria-label={searching ? 'Search results' : 'Folder contents'}
-            aria-busy={busy}
-          >
-            {busy ? (
-              <LoadingState route={route} searching={searching} />
-            ) : error ? (
-              <ErrorState error={error} onRetry={refresh} openFolder={openFolder} />
-            ) : entries.length === 0 ? (
-              <EmptyState route={route} searching={searching} filter={filter} navigate={navigate} />
-            ) : view === 'list' ? (
-              <FileList
-                entries={visible}
-                total={entries.length}
-                listKey={listKey}
-                sort={sort}
-                descending={descending}
-                changeSort={changeSort}
-                actions={actions}
-              />
-            ) : (
-              <FileGrid
-                entries={visible}
-                total={entries.length}
-                listKey={listKey}
-                actions={actions}
-              />
-            )}
-            {!busy && !error && entries.length > visibleCount && (
-              <LoadMore
-                remaining={entries.length - visibleCount}
-                onShowMore={() => {
-                  const next = Math.min(entries.length, visibleCount + 250);
-                  setVisibleCount(next);
-                  announce(describeShownItems(next, entries.length));
-                }}
-              />
-            )}
-          </section>
-
-          {results?.more && !busy && (
-            <MoreResults results={results} route={route} navigate={navigate} />
-          )}
-          {results?.capped && !busy && <LimitNotice />}
-          <ContentFooter
+        <div className="main-shell">
+          <Toolbar
             route={route}
-            searching={searching}
+            crumbs={crumbs}
+            connection={connection}
             busy={busy}
-            error={error}
-            count={entries.length}
-            folders={folders}
-            files={files}
+            folderName={folderName}
+            draft={draft}
+            setDraft={setDraft}
+            searching={searching}
+            inputRef={input}
+            onSubmit={submitSearch}
+            navigate={navigate}
+            filter={filter}
+            setFilter={setFilter}
+            setVisibleCount={setVisibleCount}
+            view={view}
+            setView={chooseView}
+            sort={sort}
+            descending={descending}
+            changeSort={changeSort}
+            openFolder={openFolder}
+            onRefresh={refresh}
+            onDisconnect={() => void logout()}
           />
-        </main>
+
+          <main className="main-content" id="main" tabIndex={-1}>
+            <h1 className="sr-only">
+              {searching ? `Search results for “${route.q}”` : folderName}
+            </h1>
+
+            <section
+              className={`file-panel ${view}`}
+              aria-label={searching ? 'Search results' : 'Folder contents'}
+              aria-busy={busy}
+            >
+              {busy ? (
+                <LoadingState route={route} searching={searching} />
+              ) : error ? (
+                <ErrorState error={error} onRetry={refresh} openFolder={openFolder} />
+              ) : entries.length === 0 ? (
+                <EmptyState
+                  route={route}
+                  searching={searching}
+                  filter={filter}
+                  navigate={navigate}
+                />
+              ) : view === 'list' ? (
+                <FileList
+                  entries={visible}
+                  total={entries.length}
+                  listKey={listKey}
+                  sort={sort}
+                  descending={descending}
+                  changeSort={changeSort}
+                  actions={actions}
+                />
+              ) : (
+                <FileGrid
+                  entries={visible}
+                  total={entries.length}
+                  listKey={listKey}
+                  actions={actions}
+                />
+              )}
+              {!busy && !error && entries.length > visibleCount && (
+                <LoadMore
+                  remaining={entries.length - visibleCount}
+                  onShowMore={() => {
+                    const next = Math.min(entries.length, visibleCount + 250);
+                    setVisibleCount(next);
+                    announce(describeShownItems(next, entries.length));
+                  }}
+                />
+              )}
+            </section>
+
+            {results?.more && !busy && (
+              <MoreResults results={results} route={route} navigate={navigate} />
+            )}
+            {results?.capped && !busy && <LimitNotice />}
+            <ContentFooter
+              route={route}
+              searching={searching}
+              busy={busy}
+              error={error}
+              count={entries.length}
+              folders={folders}
+              files={files}
+            />
+          </main>
+        </div>
+        <Toast message={toast} onDismiss={() => setToast('')} />
+        {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
+        <LiveRegion polite={polite} assertive={assertive} />
+        {menu && (
+          <EntryMenu
+            key={menu.entry.path}
+            target={menu}
+            onClose={() => setMenu(null)}
+            onChanged={(message) => {
+              setToast(message);
+              refresh();
+            }}
+          />
+        )}
       </div>
-      <Toast message={toast} onDismiss={() => setToast('')} />
-      {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
-      <LiveRegion polite={polite} assertive={assertive} />
-      {menu && (
-        <EntryMenu
-          key={menu.entry.path}
-          target={menu}
-          onClose={() => setMenu(null)}
-          onChanged={(message) => {
-            setToast(message);
-            refresh();
-          }}
-        />
-      )}
-    </div>
+    </FolderNavigation>
   );
 }

@@ -10,6 +10,7 @@
 - Keep strict directory boundaries: `/movies` never includes `/movies-old`.
 - Switch list/grid views, sort by name/size/date, filter files/folders, and load more results.
 - Choose System, Light, or Dark appearance; System follows OS changes automatically. The preference persists in this browser and also applies to sign-in.
+- Folders, breadcrumbs, and sidebar locations are ordinary links: Cmd/Ctrl-click or middle-click opens them in a new tab.
 - Right-click a file or folder (or use its **…** button) for permission-aware rename and delete actions. Folder deletion requires operator opt-in; see [deletion safety](#rename-and-delete).
 - Open the current folder or individual files in Copyparty, or download through the authenticated proxy, including HTTP Range support.
 - Sign in with a Copyparty password or browse anonymously when allowed. No uploads, cross-directory moves, rescans, or administrative operations are exposed.

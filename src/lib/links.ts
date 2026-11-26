@@ -1,0 +1,26 @@
+import type { MouseEvent } from 'react';
+import type { Route } from './types';
+
+/** The in-app URL for a route. `useRoute` reads the same shape back in `readLocation`. */
+export function routeHref(route: Route) {
+  const params = new URLSearchParams();
+  if (route.path !== '/') params.set('path', route.path);
+  if (route.q) params.set('q', route.q);
+  if (!route.recursive) params.set('recursive', 'false');
+  if (route.limit !== 250) params.set('limit', String(route.limit));
+  return '/' + (params.size ? '?' + params : '');
+}
+
+/** The route `openFolder(path)` navigates to from `current`: a fresh listing, same search scope. */
+export function folderRoute(current: Route, path: string): Route {
+  return { ...current, path, q: '', limit: 250 };
+}
+
+/**
+ * True for a plain primary click, the only one the app handles itself. Any
+ * modifier (Cmd/Ctrl, Shift, Alt) or a non-primary button keeps the browser's
+ * own behaviour: new tab, new window, download, and so on.
+ */
+export function isPlainClick(event: MouseEvent) {
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+}
