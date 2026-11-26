@@ -58,7 +58,13 @@ export class Copyparty {
     );
   }
 
-  async fetch(url: URL, password: string, init: RequestInit = {}): Promise<Response> {
+  /** `errors` overrides the user-facing message for specific upstream statuses. */
+  async fetch(
+    url: URL,
+    password: string,
+    init: RequestInit = {},
+    errors: Record<number, string> = {},
+  ): Promise<Response> {
     const headers = new Headers(init.headers);
     if (password) headers.set(this.authHeader, password);
     let response: Response;
@@ -93,7 +99,9 @@ export class Copyparty {
       };
       throw new AppError(
         response.status >= 500 ? 502 : response.status,
-        messages[response.status] ?? `Copyparty returned HTTP ${response.status}.`,
+        errors[response.status] ??
+          messages[response.status] ??
+          `Copyparty returned HTTP ${response.status}.`,
       );
     }
     return response;
@@ -258,11 +266,19 @@ export class Copyparty {
     const query = buildQuery(path, phrase, true);
     const url = new URL(this.base);
     url.searchParams.set('srch', '');
-    const data = await this.json<{ hits: Hit[]; trunc: boolean }>(url, password, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ q: query, n: limit }),
-    });
+    // The folder's own permissions ride along (rescan, instant menus). They are
+    // a nicety: a failed listing must not fail the search.
+    const [data, permissions] = await Promise.all([
+      this.json<{ hits: Hit[]; trunc: boolean }>(url, password, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ q: query, n: limit }),
+      }),
+      this.list(path, password).then(
+        (listing) => listing.permissions,
+        () => undefined,
+      ),
+    ]);
     if (!Array.isArray(data.hits))
       throw new AppError(502, 'Unrecognized Copyparty search response.');
     const entries = data.hits
@@ -288,6 +304,28 @@ export class Copyparty {
         (Boolean(data.trunc) && limit >= 8000) ||
         (!data.trunc && data.hits.length >= Math.min(limit, 7999)),
       query,
+      permissions,
     };
+  }
+
+  /**
+   * Ask Copyparty to rescan the volume containing `path`, so its search index
+   * picks up changes made outside Copyparty. Copyparty starts the scan in the
+   * background and answers at once; it requires read, write and admin there.
+   */
+  async rescan(path: string, password: string) {
+    const url = this.url(path, true);
+    url.searchParams.set('scan', '');
+    const response = await this.fetch(
+      url,
+      password,
+      {},
+      {
+        403: 'Rescanning needs Copyparty admin permission on this volume, and rescans must not be disabled on the server (no-rescan).',
+        500: 'Copyparty could not start a rescan. One may already be running; wait a moment and try again.',
+      },
+    );
+    await response.body?.cancel();
+    return { ok: true };
   }
 }

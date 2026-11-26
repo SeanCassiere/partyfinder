@@ -119,6 +119,10 @@ export function createApp(config: Config, upstreamFetch?: typeof fetch) {
             config.allowFolderDelete,
           ),
         );
+      if (route === 'POST /api/rescan') {
+        const body = (await readJson(req)) as { path?: unknown } | null;
+        return json(await copyparty.rescan(normalizePath(body?.path), password));
+      }
       if (route === 'POST /api/rename' || route === 'POST /api/delete') {
         const body = (await readJson(req)) as {
           path?: unknown;

@@ -25,6 +25,6 @@ export interface SearchResults {
   more: boolean;
   capped: boolean;
   query: string;
-  /** Permissions of `path`, when every entry is directly inside it (current-folder search). */
+  /** Permissions of `path` itself, when Copyparty returned them. */
   permissions?: string[];
 }

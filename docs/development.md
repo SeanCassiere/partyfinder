@@ -60,7 +60,7 @@ pnpm dev
 
 `server/runtime.ts` reads exactly five variables: **`COPYPARTY_URL`** is the only required one. `SESSION_SECRET` is required (32+ characters) unless `NODE_ENV=development`, where an ephemeral secret is generated per restart. `COOKIE_SECURE` must be `false` for local HTTP. `COPYPARTY_AUTH_HEADER` defaults to `PW` (the mock honours the same variable). `ALLOW_FOLDER_DELETE` defaults to `false`; set it to `true` only to exercise the folder-delete dialog.
 
-Open `http://127.0.0.1:3925` and sign in with any password — the mock accepts anything and returns `read/write/move/delete`, so the rename and delete menu items are enabled. **Browse as guest** connects anonymously with read-only permissions, matching a real read-only volume.
+Open `http://127.0.0.1:3925` and sign in with any password — the mock accepts anything and returns `read/write/move/delete/admin`, so the rename and delete menu items and **Rescan index** are enabled. **Browse as guest** connects anonymously with read-only permissions, matching a real read-only volume.
 
 ### Build the Docker image locally
 
@@ -94,6 +94,7 @@ The browser talks only to Partyfinder's `/api` routes. Nitro handles routing and
 | Authenticate            | `PW` request header (or configured replacement)                                              |
 | Rename in place         | Empty-body `POST /source?move=<full destination virtual path>`; query value URL-encoded once |
 | Delete                  | Empty-body `POST /source?delete`; re-list parent to verify disappearance                     |
+| Rescan index            | `GET /folder/?scan` (needs read, write, and admin on the volume); scan runs in background    |
 
 Upstream search is global unless its query restricts `path`. Partyfinder builds an equality-or-descendant candidate filter, then verifies each decoded result's directory and literal filename locally. Search paths exclude the upstream reverse-proxy prefix. Returned URLs are checked against the configured origin/base; redirects are not followed with credentials.
 
