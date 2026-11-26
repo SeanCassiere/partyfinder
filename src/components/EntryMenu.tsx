@@ -13,6 +13,7 @@ import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { DeleteDialog } from './dialogs/DeleteDialog';
 import { RenameDialog } from './dialogs/RenameDialog';
 import { api } from '../lib/api';
+import type { EntryPermissions } from '../../shared/permissions';
 import type { Entry } from '../../shared/types';
 
 /**
@@ -32,7 +33,13 @@ export type MenuTarget = {
   align?: 'start' | 'end';
 };
 
-type Permissions = { rename: boolean; delete: boolean; reason: string };
+/**
+ * Permissions fetched for entries the listing could not vouch for (recursive
+ * search hits in other folders). Kept briefly so reopening a menu is instant;
+ * cleared after any rename or delete.
+ */
+const fetched = new Map<string, { value: EntryPermissions; at: number }>();
+const FETCHED_TTL_MS = 60_000;
 
 type MenuItem = {
   id: string;
@@ -64,6 +71,7 @@ export function EntryMenu({
   onClose,
   onChanged,
   onCloseFocus,
+  permissions: known,
 }: {
   target: MenuTarget;
   onClose: () => void;
@@ -83,9 +91,20 @@ export function EntryMenu({
    * A deleted entry has no row, so it falls through to step 3 or 4.
    */
   onCloseFocus?: (path: string) => boolean | void;
+  /**
+   * Permissions already known from the listing (see `entryPermissions`). When
+   * given, the menu opens fully enabled with no request; otherwise it asks the
+   * server once and caches the answer for a minute.
+   */
+  permissions?: EntryPermissions;
 }) {
   const { entry } = target;
-  const [permissions, setPermissions] = useState<Permissions | null>(null);
+  const [loaded, setLoaded] = useState<EntryPermissions | null>(() => {
+    const hit = fetched.get(entry.path);
+    return hit && Date.now() - hit.at < FETCHED_TTL_MS ? hit.value : null;
+  });
+  const permissions = known ?? loaded;
+  const needsFetch = permissions === null;
   const [action, setAction] = useState<'rename' | 'delete' | null>(null);
   const [error, setError] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -103,19 +122,27 @@ export function EntryMenu({
     closeFocus.current = onCloseFocus;
   }, [onCloseFocus]);
 
-  // Permissions, plus the focus-return that runs when the whole menu unmounts.
+  // Only when the listing could not vouch for this entry: ask the server once.
   useEffect(() => {
-    opener.current = document.activeElement as HTMLElement | null;
+    if (!needsFetch) return;
     const controller = new AbortController();
-    api<Permissions>(`/api/actions?path=${encodeURIComponent(entry.path)}`, {
+    api<EntryPermissions>(`/api/actions?path=${encodeURIComponent(entry.path)}`, {
       signal: controller.signal,
     })
-      .then(setPermissions)
+      .then((value) => {
+        fetched.set(entry.path, { value, at: Date.now() });
+        setLoaded(value);
+      })
       .catch((e: Error) => {
         if (!controller.signal.aborted) setError(e.message);
       });
+    return () => controller.abort();
+  }, [entry.path, needsFetch]);
+
+  // The focus-return that runs when the whole menu unmounts.
+  useEffect(() => {
+    opener.current = document.activeElement as HTMLElement | null;
     return () => {
-      controller.abort();
       const path = focusPath.current;
       if (closeFocus.current?.(path) === true) return;
       if (!focusEntry(path)) {
@@ -283,6 +310,7 @@ export function EntryMenu({
   }
 
   function finish(message: string, path: string) {
+    fetched.clear();
     focusPath.current = path;
     onChanged(message);
     onClose();

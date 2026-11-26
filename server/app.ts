@@ -72,7 +72,11 @@ export function createApp(config: Config, upstreamFetch?: typeof fetch) {
       }
       if (route === 'GET /healthz') return json({ status: 'ok' });
       if (route === 'GET /api/config')
-        return json({ server: copyparty.base.host, url: copyparty.base.href });
+        return json({
+          server: copyparty.base.host,
+          url: copyparty.base.href,
+          allowFolderDelete: Boolean(config.allowFolderDelete),
+        });
       if (route === 'GET /api/session') return json({ signedIn: passwordFor(req) !== null });
       if (route === 'POST /api/session') {
         const now = Date.now();
